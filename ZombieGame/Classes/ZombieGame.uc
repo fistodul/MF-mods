@@ -9,8 +9,10 @@ var config float Z_BiasExp;
 var config bool bZombieWeapons; // Can zombies use weapons at all
 var config bool bZombieCrateWeapons; // If so, can they use weapon crates
 var config bool bZombieLifeSteal; // Consume the flesh of the fallen to regenerate...
+
 var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
-//var config bool bZombieTransform; // Instead of respawning, instantly turn zombie
+var config bool bZombieInfect; // Humans turn into zombies upon being killed by one
+var config bool bInfectTransform; // Instead of respawning, instantly turn into a zombie
 
 var int MeleeDistance;
 var NavigationPoint ZombieSpawns[100];
@@ -210,10 +212,8 @@ function Killed(pawn killer, pawn victim, name damageType)
         }
 
         // Move the infected to red
-        ChangeTeam(victim, 1);
-
-        // Immediately respawn them
-        // RestartPlayer(victim);
+        if (bZombieInfect)
+            ChangeTeam(victim, 1);
     }
 }
 
@@ -320,6 +320,8 @@ defaultproperties
     bZombieCrateWeapons=false
     bZombieLifeSteal=true
     bSpawnAnywhere=true
+    bZombieInfect=true
+    bInfectTransform=false
     MeleeDistance=600
     MeleeItems(2)=class'ZombieKnife'
     MeleeItems(1)=class'AdrenalineShot'

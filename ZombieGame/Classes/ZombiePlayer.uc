@@ -24,12 +24,25 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
 
 state PlayerWalking
 {
-    function TakeDamage (int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
+    function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
     {
+        local ZombieGame ZG;
+        ZG = ZombieGame(Level.Game);
+
         if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
             Damage /= 10;
 
-        Super.TakeDamage (Damage, instigatedBy, hitlocation, momentum, damageType);
+        if (
+            ZG.bZombieInfect && ZG.bInfectTransform && instigatedBy != none &&
+            PlayerReplicationInfo.Team != 1 && Health - Damage <= 0 &&
+            instigatedBy.PlayerReplicationInfo.Team == 1
+        )
+        {
+            Damage = 0;
+            ZG.Killed(instigatedBy, self, damageType);
+        }
+
+        Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
     }
 
     exec function TryLoadout()
