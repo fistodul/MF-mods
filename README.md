@@ -11,3 +11,9 @@ Then to start the game with it run a command like this
 ```
 wine MobileForces.exe mf-polar?game=ZombieGame.ZombieGame?mutator=mutPack.AddWeaps
 ```
+
+Or combine both in a single command for rapid testing like
+
+```
+rm ZombieGame.u; wine ucc make && wine MobileForces.exe mf-polar?game=ZombieGame.ZombieGame?mutator=mutPack.AddWeaps
+```
