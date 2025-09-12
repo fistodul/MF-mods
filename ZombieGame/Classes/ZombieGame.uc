@@ -89,8 +89,12 @@ function BecomeZombie(Pawn P)
     //P.AirControl = P.Default.AirControl * 1.75;
     //P.LadderSpeed = P.Default.LadderSpeed * 1.5;
 
-    if (!bZombieWeapons)
+    if (bInfectTransform || !bZombieCrateWeapons) {
         StripRanged(P);
+	    if (P.FindInventoryType(class'ZombieKnife') == None) {
+            GiveWeapon(P, "ZombieGame.ZombieKnife");
+        }
+    }
 }
 
 // Strip ranged items
