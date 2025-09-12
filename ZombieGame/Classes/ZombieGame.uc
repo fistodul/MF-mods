@@ -338,8 +338,7 @@ defaultproperties
     MaxTeamSize=32
     bBalanceTeams=false
     bPlayersBalanceTeams=false
-    bBalancing=false
-    bHumansOnly=false
+    bBalancing=true
     MapPrefix='ZM-'
     DefaultPlayerClass=class'ZombiePlayer'
     GameReplicationInfoClass=class'ZombieReplicationInfo'
