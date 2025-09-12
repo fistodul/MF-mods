@@ -252,6 +252,10 @@ function bool IsForTeam(Pawn P, actor candidate, int team)
     local Pawn Other;
     foreach AllActors(class'Pawn', Other)
     {
+        // Prevents counting self and vehicles etc
+        if (Other.PlayerReplicationInfo == None || Other == P)
+            continue;
+
         if (!IsOnTeam(Other, team) && VSize(Other.Location - candidate.Location) < MeleeDistance * 1.5)
             return false;
     }
