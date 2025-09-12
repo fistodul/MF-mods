@@ -17,3 +17,11 @@ Or combine both in a single command for rapid testing like
 ```
 rm ZombieGame.u; wine ucc make && wine MobileForces.exe mf-polar?game=ZombieGame.ZombieGame?mutator=mutPack.AddWeaps
 ```
+
+## Useful info
+
+To compile packages from these folder, you need to add the following in the `[Editor.EditorEngine]` section in your `MobileForces.ini`
+
+```
+EditPackages=ZombieGame
+```
