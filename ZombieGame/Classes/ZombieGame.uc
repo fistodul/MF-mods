@@ -115,7 +115,7 @@ function GiveMelee(Pawn P)
     for (i = 0; i < ArrayCount(MeleeItems); i++)
     {
         if (P.FindInventoryType(MeleeItems[i]) == None) {
-            GiveWeapon(P, MeleeItems[i].outer.name $ "." $ string(MeleeItems[i].Name));
+            GiveWeapon(P, MeleeItems[i].outer.name $ "." $ MeleeItems[i].Name);
         }
     }
 }
