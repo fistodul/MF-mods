@@ -2,10 +2,10 @@ class TugReplicationInfo extends RageTeamReplicationInfo;
 
 simulated function String GetGoalMessage(PlayerPawn Player)
 {
-    return GoalStrings[0];
+    return GoalStrings[0] $ FragLimit $ " times!";
 }
 
 defaultproperties
 {
-    GoalStrings(0)="Convert each player to your team!"
+    GoalStrings(0)="Convert each player to your team "
 }

@@ -158,6 +158,12 @@ function bool ChangeTeam(Pawn P, int num)
     return false;
 }
 
+simulated function PreBeginPlay()
+{
+	Super.PreBeginPlay();
+	ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = bZombieInfect;
+}
+
 function PostBeginPlay()
 {
     local Actor Act;
@@ -216,8 +222,19 @@ function Killed(pawn killer, pawn victim, name damageType)
         }
 
         // Move the infected to red
-        if (bZombieInfect)
+        if (bZombieInfect) {
+            if (Teams[0].Size <= 1) {
+                killer.PlayerReplicationInfo.Score += 5;
+                Teams[1].Score += 1;
+
+                if (Teams[1].Score >= FragLimit)
+                    EndGame("fraglimit");
+
+                // Go to the round if the team is wiped out
+            }
+
             ChangeTeam(victim, 1);
+        }
     }
 }
 
@@ -303,6 +320,15 @@ function EndGame(string Reason)
     class'Pawn'.Default.JumpZ  = SavedJumpZ;
 }
 
+function Logout(pawn Exiting)
+{
+	Super.Logout(Exiting);
+
+    // Restore defaults individually
+    Exiting.Default.Health = SavedHealth;
+    Exiting.Default.JumpZ  = SavedJumpZ;
+}
+
 event PlayerPawn Login
 (
     string Portal,
@@ -335,6 +361,9 @@ defaultproperties
     MeleeItems(1)=class'AdrenalineShot'
     MeleeItems(0)=class'RageArmour'
     GameName="Zombie Mode"
+    bScoreTeamKills=false
+    FragLimit=3
+    TimeLimit=9
     StartUpTeamMessage="You are a"
     TeamColor(0)="Human"
     TeamColor(1)="Zombie"
@@ -343,7 +372,8 @@ defaultproperties
     bBalanceTeams=false
     bPlayersBalanceTeams=false
     bBalancing=true
-    MapPrefix='ZM-'
+    MapPrefix="ZM-"
+    BeaconName="ZM"
     DefaultPlayerClass=class'ZombiePlayer'
     GameReplicationInfoClass=class'ZombieReplicationInfo'
     HUDType=class'ZombieHUD'

@@ -68,8 +68,20 @@ function Killed(pawn killer, pawn victim, name damageType)
 {
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
-    if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
+
+    if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team) {
+        if (Teams[victim.PlayerReplicationInfo.Team].Size <= 1) {
+            killer.PlayerReplicationInfo.Score += 5;
+            Teams[killer.PlayerReplicationInfo.Team].Score += 1;
+
+            if (Teams[killer.PlayerReplicationInfo.Team].Score >= FragLimit)
+                EndGame("fraglimit");
+
+            // Go to the round if the team is wiped out
+        }
+
         ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
+    }
 }
 
 // Return true if candidate is close to friendly players and far from enemies
@@ -129,6 +141,31 @@ function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional 
     return Super.FindPlayerStart(P, InTeam, incomingName);
 }
 
+/*function EndGame(string Reason)
+{
+    local int Biggest;
+
+    if (Reason == "timelimit") {
+        if (Teams[0].Size > Teams[1].Size)
+            Biggest = 0;
+        else if (Teams[0].Size < Teams[1].Size)
+            Biggest = 1;
+        else
+            Biggest = Rand(2);
+
+            Teams[Biggest].Score += 1;
+            //if (Teams[Biggest].Score >= FragLimit)
+            //    EndGame("fraglimit");
+
+        TimeLimit = 9;
+        TugReplicationInfo(GameReplicationInfo).TimeLimit = TimeLimit;
+        TugReplicationInfo(GameReplicationInfo).RemainingTime = TimeLimit * 60;
+        return;
+    }
+
+    Super.EndGame(Reason);
+}*/
+
 event PlayerPawn Login
 (
     string Portal,
@@ -149,12 +186,17 @@ defaultproperties
     bKillTransform=false
     MeleeDistance=600
     GameName="Tug of war"
+    bScoreTeamKills=false
+    FragLimit=3
+    TimeLimit=9
     FriendlyFireScale=0.0
     MaxTeamSize=32
     bBalanceTeams=false
     bPlayersBalanceTeams=false
     bBalancing=true
-    MapPrefix='TG-'
+    MapPrefix="TG-"
+    BeaconName="TG"
     DefaultPlayerClass=class'TugPlayer'
     GameReplicationInfoClass=class'TugReplicationInfo'
+    HUDType=class'TugHUD'
 }
