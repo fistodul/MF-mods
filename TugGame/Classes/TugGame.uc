@@ -38,27 +38,25 @@ function PostBeginPlay()
     local RageDetPossibleKeyPos DK;
 
     Super.PostBeginPlay();
-    if (bSpawnAnywhere) {
-        NumBlueSpawns = 0;
-        NumRedSpawns = 0;
+    NumBlueSpawns = 0;
+    NumRedSpawns = 0;
 
-        // collect PlayerStart actors with TeamNumber == 255 and detonation keys
-        foreach AllActors(class'Actor', Act)
+    // collect PlayerStart actors with TeamNumber == 255 and detonation keys
+    foreach AllActors(class'Actor', Act)
+    {
+        if (Act.IsA('PlayerStart'))
         {
-            if (Act.IsA('PlayerStart'))
-            {
-                PS = PlayerStart(Act);
+            PS = PlayerStart(Act);
 
-                if (PS.TeamNumber != 1)
-                    AddBlueSpawn(PS);
-                if (PS.TeamNumber != 0)
-                    AddRedSpawn(PS);
-            }
-            else if (Act.IsA('RageDetPossibleKeyPos')) {
-                DK = RageDetPossibleKeyPos(Act);
-                AddBlueSpawn(DK);
-                AddRedSpawn(DK);
-            }
+            if (PS.TeamNumber != 1)
+                AddBlueSpawn(PS);
+            if (PS.TeamNumber != 0)
+                AddRedSpawn(PS);
+        }
+        else if (Act.IsA('RageDetPossibleKeyPos')) {
+            DK = RageDetPossibleKeyPos(Act);
+            AddBlueSpawn(DK);
+            AddRedSpawn(DK);
         }
     }
 }

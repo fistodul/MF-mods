@@ -8,11 +8,13 @@ state PlayerWalking
         TG = TugGame(Level.Game);
 
         if (
-            TG.bKillTransform && instigatedBy != none && Health - Damage <= 0 &&
+            TG.bKillTransform && instigatedBy != none &&
+            instigatedBy.PlayerReplicationInfo != none && Health - Damage <= 0 &&
             PlayerReplicationInfo.Team != instigatedBy.PlayerReplicationInfo.Team
         )
         {
             Damage = 0;
+            Health = Default.Health;
             TG.Killed(instigatedBy, self, damageType);
         }
 

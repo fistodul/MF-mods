@@ -12,7 +12,7 @@ var config bool bZombieLifeSteal; // Consume the flesh of the fallen to regenera
 
 var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
 var config bool bZombieInfect; // Humans turn into zombies upon being killed by one
-var config bool bInfectTransform; // Instead of respawning, instantly turn into a zombie
+var config bool bKillTransform; // Instead of respawning, instantly turn into a zombie
 
 var int MeleeDistance;
 var NavigationPoint ZombieSpawns[100];
@@ -89,7 +89,7 @@ function BecomeZombie(Pawn P)
     //P.AirControl = P.Default.AirControl * 1.75;
     //P.LadderSpeed = P.Default.LadderSpeed * 1.5;
 
-    if (bInfectTransform || !bZombieCrateWeapons) {
+    if (bKillTransform || !bZombieCrateWeapons) {
         StripRanged(P);
 	    if (P.FindInventoryType(class'ZombieKnife') == None) {
             GiveWeapon(P, "ZombieGame.ZombieKnife");
@@ -160,7 +160,14 @@ function bool ChangeTeam(Pawn P, int num)
 
 simulated function PreBeginPlay()
 {
-	Super.PreBeginPlay();
+    if (bZombieInfect) {
+        FragLimit = 3;
+        bScoreTeamKills = false;
+    }
+    else
+        FragLimit = 30;
+
+    Super.PreBeginPlay();
 	ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = bZombieInfect;
 }
 
@@ -173,34 +180,32 @@ function PostBeginPlay()
     SavedHealth = class'Pawn'.Default.Health;
     SavedJumpZ = class'Pawn'.Default.JumpZ;
 
-    if (bSpawnAnywhere) {
-        NumZombieSpawns = 0;
-        NumHumanSpawns = 0;
+    NumZombieSpawns = 0;
+    NumHumanSpawns = 0;
 
-        // collect PlayerStart actors with TeamNumber == 255 and detonation keys
-        foreach AllActors(class'Actor', Act)
+    // collect PlayerStart actors with TeamNumber == 255 and detonation keys
+    foreach AllActors(class'Actor', Act)
+    {
+        if (Act.IsA('PlayerStart'))
         {
-            if (Act.IsA('PlayerStart'))
-            {
-                PS = PlayerStart(Act);
+            PS = PlayerStart(Act);
 
-                if (PS.TeamNumber == 255)
-                    AddZombieSpawn(PS);
-                else
-                    AddHumanSpawn(PS);
-            }
-            else if (Act.IsA('RageDetPossibleKeyPos'))
-                AddZombieSpawn(RageDetPossibleKeyPos(Act));
-            else if (Act.IsA('LoadoutBlocker')) 
-                Act.Destroy();
-        }
-
-        // if nothing's found, fallback to any PlayerStart (defensive)
-        if (NumZombieSpawns == 0)
-        {
-            foreach AllActors(class'PlayerStart', PS)
+            if (PS.TeamNumber == 255)
                 AddZombieSpawn(PS);
+            else
+                AddHumanSpawn(PS);
         }
+        else if (Act.IsA('RageDetPossibleKeyPos'))
+            AddZombieSpawn(RageDetPossibleKeyPos(Act));
+        else if (Act.IsA('LoadoutBlocker')) 
+            Act.Destroy();
+    }
+
+    // if nothing's found, fallback to any PlayerStart (defensive)
+    if (NumZombieSpawns == 0)
+    {
+        foreach AllActors(class'PlayerStart', PS)
+            AddZombieSpawn(PS);
     }
 }
 
@@ -340,7 +345,7 @@ event PlayerPawn Login
     local PlayerPawn P;
     P = Super.Login(Portal, Options, Error, class'ZombiePlayer');
 
-    if (P != None)
+    if (P != None && P.PlayerReplicationInfo.Team == 1)
         P.PlayerRestartState = 'PlayerWalking';
 
     //RestartPlayer(P);
@@ -353,16 +358,14 @@ defaultproperties
     bZombieWeapons=true
     bZombieCrateWeapons=false
     bZombieLifeSteal=true
-    bSpawnAnywhere=true
+    bSpawnAnywhere=false
     bZombieInfect=true
-    bInfectTransform=false
+    bKillTransform=false
     MeleeDistance=600
     MeleeItems(2)=class'ZombieKnife'
     MeleeItems(1)=class'AdrenalineShot'
     MeleeItems(0)=class'RageArmour'
     GameName="Zombie Mode"
-    bScoreTeamKills=false
-    FragLimit=3
     TimeLimit=9
     StartUpTeamMessage="You are a"
     TeamColor(0)="Human"
