@@ -91,11 +91,8 @@ function bool IsForTeam(Pawn P, actor candidate, int team)
             if (UnitsAway < 3)
                 friendlyPlayers++;
         }
-        else
-        {
-            if (UnitsAway < 1.5)
-                return false;
-        }
+        else if (UnitsAway < 1.5)
+            return false;
     }
 
     return friendlyPlayers >= Teams[P.PlayerReplicationInfo.Team].Size / 4;
