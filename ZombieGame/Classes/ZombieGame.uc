@@ -14,12 +14,12 @@ var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
 var config bool bZombieInfect; // Humans turn into zombies upon being killed by one
 var config bool bKillTransform; // Instead of respawning, instantly turn into a zombie
 
+var NavigationPoint HumanSpawns[50];
+var int NumHumanSpawns;
+
 var int MeleeDistance;
 var NavigationPoint ZombieSpawns[100];
 var int NumZombieSpawns;
-
-var NavigationPoint HumanSpawns[50];
-var int NumHumanSpawns;
 
 // Allows changing the default values and restoring them without guessing
 var int SavedHealth;
@@ -120,6 +120,28 @@ function GiveMelee(Pawn P)
     }
 }
 
+// Return true if candidate is too close to a spawn of the given team
+/*function bool AvoidSpawn(NavigationPoint candidate, int team)
+{
+    local PlayerStart PS;
+    foreach AllActors(class'PlayerStart', PS)
+    {
+        if (PS.TeamNumber == team && VSize(PS.Location - candidate.Location) < MeleeDistance * 1.5)
+            return true;
+    }
+
+    return false;
+}*/
+
+// Helper: append a NavigationPoint to the fixed array safely
+function AddHumanSpawn(NavigationPoint NP)
+{
+    if (NumHumanSpawns >= 50)
+        return;
+
+    HumanSpawns[NumHumanSpawns++] = NP;
+}
+
 // Helper: append a NavigationPoint to the fixed array safely
 function AddZombieSpawn(NavigationPoint NP)
 {
@@ -127,15 +149,6 @@ function AddZombieSpawn(NavigationPoint NP)
         return;
 
     ZombieSpawns[NumZombieSpawns++] = NP;
-}
-
-// Helper: append a NavigationPoint to the fixed array safely
-function AddHumanSpawn(NavigationPoint NP)
-{
-    if (NumZombieSpawns >= 50)
-        return;
-
-    HumanSpawns[NumHumanSpawns++] = NP;
 }
 
 // SetPhysics(PHYS_Flying);
@@ -190,7 +203,7 @@ function PostBeginPlay()
         {
             PS = PlayerStart(Act);
 
-            if (PS.TeamNumber == 255)
+            if (PS.TeamNumber == 255/* && !AvoidSpawn(PS, 0)*/)
                 AddZombieSpawn(PS);
             else
                 AddHumanSpawn(PS);
