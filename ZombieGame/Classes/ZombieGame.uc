@@ -358,6 +358,20 @@ function Logout(pawn Exiting)
     Exiting.Default.JumpZ  = SavedJumpZ;
 }
 
+function bool SetEndCams(string Reason)
+{
+	if (Super.SetEndCams(Reason)) {
+        if (Teams[0].Score > Teams[1].Score)
+            GameReplicationInfo.GameEndedComments = "Humans have survived the apocalypse!";
+        else
+            GameReplicationInfo.GameEndedComments = "Zombies have taken over the world!";
+
+            return true;
+    }
+
+    return false;
+}
+
 event PlayerPawn Login
 (
     string Portal,
