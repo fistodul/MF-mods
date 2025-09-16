@@ -55,10 +55,13 @@ function PostBeginPlay()
     // collect PlayerStart actors with TeamNumber == 255 and detonation keys for everyone
     for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
-        if (IsSpawnFarEnough(NP, 1))
-            AddBlueSpawn(NP);
-        if (IsSpawnFarEnough(NP, 0))
-            AddRedSpawn(NP);
+        if (NP.IsA('PlayerStart') || NP.IsA('RageDetPossibleKeyPos'))
+        {
+            if (IsSpawnFarEnough(NP, 1))
+                AddBlueSpawn(NP);
+            if (IsSpawnFarEnough(NP, 0))
+                AddRedSpawn(NP);
+        }
     }
 }
 
