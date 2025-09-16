@@ -121,17 +121,17 @@ function GiveMelee(Pawn P)
 }
 
 // Return true if candidate is too close to a spawn of the given team
-/*function bool AvoidSpawn(NavigationPoint candidate, int team)
+function bool AvoidSpawn(NavigationPoint candidate, int team)
 {
     local PlayerStart PS;
     foreach AllActors(class'PlayerStart', PS)
     {
-        if (PS.TeamNumber == team && VSize(PS.Location - candidate.Location) < MeleeDistance * 1.5)
+        if (PS.TeamNumber == team && VSize(PS.Location - candidate.Location) < MeleeDistance * 3)
             return true;
     }
 
     return false;
-}*/
+}
 
 // Helper: append a NavigationPoint to the fixed array safely
 function AddHumanSpawn(NavigationPoint NP)
@@ -203,8 +203,10 @@ function PostBeginPlay()
         {
             PS = PlayerStart(Act);
 
-            if (PS.TeamNumber == 255/* && !AvoidSpawn(PS, 0)*/)
-                AddZombieSpawn(PS);
+            if (PS.TeamNumber == 255) {
+                if (!AvoidSpawn(PS, 0) && !AvoidSpawn(PS, 1))
+                    AddZombieSpawn(PS);
+            }
             else
                 AddHumanSpawn(PS);
         }
@@ -281,38 +283,47 @@ function AddDefaultInventory(Pawn P)
         Super.AddDefaultInventory(P);
 }
 
-// Return true if candidate is more than MeleeDistance away from every Pawn not on it's team
-function bool IsForTeam(Pawn P, actor candidate, int team)
+// Return true if candidate is close to friendly players and far from enemies
+function bool IsForTeam(Pawn P, actor candidate)
 {
     local Pawn Other;
+    local float UnitsAway;
+    local int friendlyPlayers;
+
+    friendlyPlayers = 0;
     foreach AllActors(class'Pawn', Other)
     {
         // Prevents counting self and vehicles etc
         if (Other.PlayerReplicationInfo == None || Other == P)
             continue;
 
-        if (!IsOnTeam(Other, team) && VSize(Other.Location - candidate.Location) < MeleeDistance * 1.5)
+        UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
+        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team)) {
+            if (UnitsAway < 5)
+                friendlyPlayers++;
+        }
+        else if (UnitsAway < 1.5)
             return false;
     }
 
-    return true;
+    return friendlyPlayers >= Teams[P.PlayerReplicationInfo.Team].Size / 4;
 }
 
 // avoid humans when spawning zombies and vice versa
-function NavigationPoint PickSpawn(Pawn P, int team)
+function NavigationPoint PickSpawn(Pawn P)
 {
     local int tries;
     local NavigationPoint candidate;
 
     // attempt a few random picks
-    for (tries = 0; tries < 7; tries++)
+    for (tries = 0; tries < 9; tries++)
     {
-        if (team == 1)
+        if (P.PlayerReplicationInfo.Team == 1)
             candidate = ZombieSpawns[Rand(NumZombieSpawns)];
         else
             candidate = HumanSpawns[Rand(NumHumanSpawns)];
 
-        if (IsForTeam(P, candidate, team))
+        if (IsForTeam(P, candidate))
             return candidate;
     }
 
@@ -322,8 +333,8 @@ function NavigationPoint PickSpawn(Pawn P, int team)
 
 function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional string incomingName)
 {
-    if (bSpawnAnywhere)
-        return PickSpawn(P, P.PlayerReplicationInfo.Team);
+    if (bSpawnAnywhere && P.PlayerReplicationInfo != none)
+        return PickSpawn(P);
 
     // fallback to normal behavior
     return Super.FindPlayerStart(P, InTeam, incomingName);
@@ -371,7 +382,7 @@ defaultproperties
     bZombieWeapons=true
     bZombieCrateWeapons=false
     bZombieLifeSteal=true
-    bSpawnAnywhere=false
+    bSpawnAnywhere=true
     bZombieInfect=true
     bKillTransform=false
     MeleeDistance=600
@@ -386,7 +397,6 @@ defaultproperties
     FriendlyFireScale=0.01
     MaxTeamSize=32
     bBalanceTeams=false
-    bPlayersBalanceTeams=false
     bBalancing=true
     MapPrefix="ZM-"
     BeaconName="ZM"
