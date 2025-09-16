@@ -9,7 +9,7 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
 	RenderHeight = (Health_Back.H * Max(RagePlayerOwner.Health, 0)) / RagePlayerOwner.Default.Health;
 
 	// Filled Health level
-	Canvas.SetPos (sX, sY);
+	Canvas.SetPos(sX, sY);
 	Canvas.Style = ERenderStyle.STY_Translucent;
 	Canvas.DrawColor = Colour_Sets[TeamIndex()];
 
@@ -18,11 +18,11 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
 	HealthLevel.H -= Health_Back.H - RenderHeight;
 	RenderHeight *= RenderScale;
 
-	Canvas.SetPos (sX, sY + (Health_Back.H * RenderScale) - RenderHeight);
+	Canvas.SetPos(sX, sY + (Health_Back.H * RenderScale) - RenderHeight);
 	DrawTexRect(Canvas, HealthLevel, Health_Back.W * RenderScale, RenderHeight);
 
 	// Outline
-	Canvas.SetPos (sX, sY);
+	Canvas.SetPos(sX, sY);
 	Canvas.Style = ERenderStyle.STY_Alpha;
 	Canvas.DrawColor = WhiteColor;
 	DrawTexRect(
