@@ -7,16 +7,29 @@ var config bool bSpawnAnywhere; // Don't spawn just from your base
 var config bool bKillTransform; // Instead of respawning, instantly turn into the other team
 var int MeleeDistance;
 
-var NavigationPoint BlueSpawns[100];
+var NavigationPoint BlueSpawns[50];
 var int NumBlueSpawns;
 
-var NavigationPoint RedSpawns[100];
+var NavigationPoint RedSpawns[50];
 var int NumRedSpawns;
+
+// Return false if candidate is too close to a spawn of the given team
+function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
+{
+    local PlayerStart PS;
+    foreach RadiusActors(class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
+    {
+        if (PS.TeamNumber == team)
+            return false;
+    }
+
+    return true;
+}
 
 // Helper: append a NavigationPoint to the fixed array safely
 function AddBlueSpawn(NavigationPoint NP)
 {
-    if (NumBlueSpawns >= 100)
+    if (NumBlueSpawns >= ArrayCount(BlueSpawns))
         return;
 
     BlueSpawns[NumBlueSpawns++] = NP;
@@ -25,7 +38,7 @@ function AddBlueSpawn(NavigationPoint NP)
 // Helper: append a NavigationPoint to the fixed array safely
 function AddRedSpawn(NavigationPoint NP)
 {
-    if (NumRedSpawns >= 100)
+    if (NumRedSpawns >= ArrayCount(RedSpawns))
         return;
 
     RedSpawns[NumRedSpawns++] = NP;
@@ -33,7 +46,7 @@ function AddRedSpawn(NavigationPoint NP)
 
 function PostBeginPlay()
 {
-    local Actor Act;
+    local NavigationPoint NP;
     local PlayerStart PS;
     local RageDetPossibleKeyPos DK;
 
@@ -41,20 +54,20 @@ function PostBeginPlay()
     NumBlueSpawns = 0;
     NumRedSpawns = 0;
 
-    // collect PlayerStart actors with TeamNumber == 255 and detonation keys
-    foreach AllActors(class'Actor', Act)
+    // collect PlayerStart actors with TeamNumber == 255 and detonation keys for everyone
+    for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
-        if (Act.IsA('PlayerStart'))
+        if (NP.IsA('PlayerStart'))
         {
-            PS = PlayerStart(Act);
+            PS = PlayerStart(NP);
 
-            if (PS.TeamNumber != 1)
+            if (IsSpawnFarEnough(PS, 1))
                 AddBlueSpawn(PS);
-            if (PS.TeamNumber != 0)
+            if (IsSpawnFarEnough(PS, 0))
                 AddRedSpawn(PS);
         }
-        else if (Act.IsA('RageDetPossibleKeyPos')) {
-            DK = RageDetPossibleKeyPos(Act);
+        else if (NP.IsA('RageDetPossibleKeyPos')) {
+            DK = RageDetPossibleKeyPos(NP);
             AddBlueSpawn(DK);
             AddRedSpawn(DK);
         }
@@ -83,21 +96,21 @@ function Killed(pawn killer, pawn victim, name damageType)
 }
 
 // Return true if candidate is close to friendly players and far from enemies
-function bool IsForTeam(Pawn P, actor candidate, int team)
+function bool IsForTeam(Pawn P, actor candidate)
 {
     local Pawn Other;
     local float UnitsAway;
     local int friendlyPlayers;
 
     friendlyPlayers = 0;
-    foreach AllActors(class'Pawn', Other)
+    for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
     {
         // Prevents counting self and vehicles etc
         if (Other.PlayerReplicationInfo == None || Other == P)
             continue;
 
         UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
-        if (IsOnTeam(Other, team)) {
+        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team)) {
             if (UnitsAway < 5)
                 friendlyPlayers++;
         }
@@ -109,7 +122,7 @@ function bool IsForTeam(Pawn P, actor candidate, int team)
 }
 
 // avoid the other team when picking a spawn point
-function NavigationPoint PickSpawn(Pawn P, int team)
+function NavigationPoint PickSpawn(Pawn P)
 {
     local int tries;
     local NavigationPoint candidate;
@@ -117,12 +130,12 @@ function NavigationPoint PickSpawn(Pawn P, int team)
     // attempt a few random picks
     for (tries = 0; tries < 9; tries++)
     {
-        if (team == 1)
+        if (P.PlayerReplicationInfo.Team == 1)
             candidate = RedSpawns[Rand(NumRedSpawns)];
         else
             candidate = BlueSpawns[Rand(NumBlueSpawns)];
 
-        if (IsForTeam(P, candidate, team))
+        if (IsForTeam(P, candidate))
             return candidate;
     }
 
@@ -132,8 +145,8 @@ function NavigationPoint PickSpawn(Pawn P, int team)
 
 function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional string incomingName)
 {
-    if (bSpawnAnywhere)
-        return PickSpawn(P, P.PlayerReplicationInfo.Team);
+    if (bSpawnAnywhere && P.PlayerReplicationInfo != none)
+        return PickSpawn(P);
 
     // fallback to normal behavior
     return Super.FindPlayerStart(P, InTeam, incomingName);
