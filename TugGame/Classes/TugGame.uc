@@ -98,7 +98,7 @@ function bool IsForTeam(Pawn P, actor candidate, int team)
 
         UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
         if (IsOnTeam(Other, team)) {
-            if (UnitsAway < 3)
+            if (UnitsAway < 5)
                 friendlyPlayers++;
         }
         else if (UnitsAway < 1.5)
@@ -190,7 +190,6 @@ defaultproperties
     FriendlyFireScale=0.0
     MaxTeamSize=32
     bBalanceTeams=false
-    bPlayersBalanceTeams=false
     bBalancing=true
     MapPrefix="TG-"
     BeaconName="TG"
