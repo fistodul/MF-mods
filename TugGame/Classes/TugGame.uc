@@ -47,8 +47,6 @@ function AddRedSpawn(NavigationPoint NP)
 function PostBeginPlay()
 {
     local NavigationPoint NP;
-    local PlayerStart PS;
-    local RageDetPossibleKeyPos DK;
 
     Super.PostBeginPlay();
     NumBlueSpawns = 0;
@@ -57,20 +55,10 @@ function PostBeginPlay()
     // collect PlayerStart actors with TeamNumber == 255 and detonation keys for everyone
     for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
-        if (NP.IsA('PlayerStart'))
-        {
-            PS = PlayerStart(NP);
-
-            if (IsSpawnFarEnough(PS, 1))
-                AddBlueSpawn(PS);
-            if (IsSpawnFarEnough(PS, 0))
-                AddRedSpawn(PS);
-        }
-        else if (NP.IsA('RageDetPossibleKeyPos')) {
-            DK = RageDetPossibleKeyPos(NP);
-            AddBlueSpawn(DK);
-            AddRedSpawn(DK);
-        }
+        if (IsSpawnFarEnough(NP, 1))
+            AddBlueSpawn(NP);
+        if (IsSpawnFarEnough(NP, 0))
+            AddRedSpawn(NP);
     }
 }
 
