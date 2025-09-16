@@ -120,17 +120,17 @@ function GiveMelee(Pawn P)
     }
 }
 
-// Return true if candidate is too close to a spawn of the given team
-function bool AvoidSpawn(NavigationPoint candidate, int team)
+// Return false if candidate is too close to a spawn of the given team
+function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
 {
     local PlayerStart PS;
-    foreach AllActors(class'PlayerStart', PS)
+    foreach RadiusActors(class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
     {
-        if (PS.TeamNumber == team && VSize(PS.Location - candidate.Location) < MeleeDistance * 3)
-            return true;
+        if (PS.TeamNumber == team)
+            return false;
     }
 
-    return false;
+    return true;
 }
 
 // Helper: append a NavigationPoint to the fixed array safely
@@ -186,41 +186,43 @@ simulated function PreBeginPlay()
 
 function PostBeginPlay()
 {
-    local Actor Act;
+    local NavigationPoint NP;
     local PlayerStart PS;
+    local LoadoutBlocker LB;
 
     Super.PostBeginPlay();
     SavedHealth = class'Pawn'.Default.Health;
     SavedJumpZ = class'Pawn'.Default.JumpZ;
 
-    NumZombieSpawns = 0;
     NumHumanSpawns = 0;
+    NumZombieSpawns = 0;
 
-    // collect PlayerStart actors with TeamNumber == 255 and detonation keys
-    foreach AllActors(class'Actor', Act)
+    // collect PlayerStart actors with TeamNumber == 255 and detonation keys for zombies
+    for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
-        if (Act.IsA('PlayerStart'))
+        if (NP.IsA('PlayerStart'))
         {
-            PS = PlayerStart(Act);
+            PS = PlayerStart(NP);
 
             if (PS.TeamNumber == 255) {
-                if (!AvoidSpawn(PS, 0) && !AvoidSpawn(PS, 1))
+                if (IsSpawnFarEnough(PS, 0) && IsSpawnFarEnough(PS, 1))
                     AddZombieSpawn(PS);
             }
             else
                 AddHumanSpawn(PS);
         }
-        else if (Act.IsA('RageDetPossibleKeyPos'))
-            AddZombieSpawn(RageDetPossibleKeyPos(Act));
-        else if (Act.IsA('LoadoutBlocker')) 
-            Act.Destroy();
+        else if (NP.IsA('RageDetPossibleKeyPos'))
+            AddZombieSpawn(NP);
     }
 
-    // if nothing's found, fallback to any PlayerStart (defensive)
+    foreach AllActors(class'LoadoutBlocker', LB)
+        LB.Destroy();
+
+    // if nothing's found, fallback to any NavigationPoint (defensive)
     if (NumZombieSpawns == 0)
     {
-        foreach AllActors(class'PlayerStart', PS)
-            AddZombieSpawn(PS);
+        for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
+            AddZombieSpawn(NP);
     }
 }
 
@@ -261,17 +263,16 @@ function Killed(pawn killer, pawn victim, name damageType)
 // Applies buffs based on the game state at the time of respawn
 function bool RestartPlayer(pawn P)
 {
-    local bool bResult;
-    bResult = Super.RestartPlayer(P);
-
-    if (bResult) {
+    if (Super.RestartPlayer(P)) {
         if (IsOnTeam(P, 1))
             BecomeZombie(P);
         else
             BecomeHuman(P);
+
+        return true;
     }
 
-    return bResult;
+    return false;
 }
 
 // Zombies get jack shite
@@ -291,7 +292,7 @@ function bool IsForTeam(Pawn P, actor candidate)
     local int friendlyPlayers;
 
     friendlyPlayers = 0;
-    foreach AllActors(class'Pawn', Other)
+    for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
     {
         // Prevents counting self and vehicles etc
         if (Other.PlayerReplicationInfo == None || Other == P)
