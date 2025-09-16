@@ -18,7 +18,7 @@ var NavigationPoint HumanSpawns[50];
 var int NumHumanSpawns;
 
 var int MeleeDistance;
-var NavigationPoint ZombieSpawns[100];
+var NavigationPoint ZombieSpawns[50];
 var int NumZombieSpawns;
 
 // Allows changing the default values and restoring them without guessing
@@ -136,7 +136,7 @@ function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
 // Helper: append a NavigationPoint to the fixed array safely
 function AddHumanSpawn(NavigationPoint NP)
 {
-    if (NumHumanSpawns >= 50)
+    if (NumHumanSpawns >= ArrayCount(HumanSpawns))
         return;
 
     HumanSpawns[NumHumanSpawns++] = NP;
@@ -145,7 +145,7 @@ function AddHumanSpawn(NavigationPoint NP)
 // Helper: append a NavigationPoint to the fixed array safely
 function AddZombieSpawn(NavigationPoint NP)
 {
-    if (NumZombieSpawns >= 100)
+    if (NumZombieSpawns >= ArrayCount(ZombieSpawns))
         return;
 
     ZombieSpawns[NumZombieSpawns++] = NP;
