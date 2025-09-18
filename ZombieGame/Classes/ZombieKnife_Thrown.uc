@@ -38,5 +38,5 @@ defaultproperties
     MaxSpeed=2250
     speed=1000
     TimeBeforeReturn=4.5
-    MyDamageType='RageWeaponsDOTRocketLauncher'
+    MyDamageType="RageWeaponsDOTRocketLauncher"
 }
