@@ -43,6 +43,7 @@ function BecomeHuman(Pawn P)
 {
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed;
     P.Default.Health = SavedHealth;
+    ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).DefaultHealth = P.Default.Health;
     P.Health = P.Default.Health;
     P.MaxCarry = P.Default.MaxCarry;
 
@@ -72,6 +73,7 @@ function BecomeZombie(Pawn P)
 
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.45 * boost;
     P.Default.Health = SavedHealth * 3.2 * boost;
+    ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).DefaultHealth = P.Default.Health;
     P.Health = P.Default.Health;
     P.MaxCarry = P.Default.MaxCarry - 2;
 

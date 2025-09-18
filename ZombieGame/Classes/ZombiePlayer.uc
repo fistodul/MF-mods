@@ -70,4 +70,5 @@ defaultproperties
     TeamMeshName="RageGfx.RagePlayer2Mesh"
     MenuName="Covert Trooper"
     Mesh=SkeletalMesh'RageGfx.RagePlayer2Mesh'
+    PlayerReplicationInfoClass=class'ZombiePlayerReplicationInfo'
 }

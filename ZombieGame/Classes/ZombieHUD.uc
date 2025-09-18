@@ -1,12 +1,24 @@
 class ZombieHUD extends RageTeamHUD;
 
+var bool bHealthInitialized;
+
 simulated function DrawHealth(canvas Canvas, int sX, int sY)
 {
 	local int RenderHeight;
 	local float TextWidth, TextHeight;
 	local TexRect HealthLevel;
 
-	RenderHeight = (Health_Back.H * Max(RagePlayerOwner.Health, 0)) / RagePlayerOwner.Default.Health;
+	local ZombiePlayerReplicationInfo ZPRI;
+
+	ZPRI = ZombiePlayerReplicationInfo(RagePlayerOwner.PlayerReplicationInfo);
+
+	if (!bHealthInitialized && ZPRI.DefaultHealth > 0)
+	{
+		RagePlayerOwner.Health = ZPRI.DefaultHealth;
+		bHealthInitialized = true;
+	}
+
+	RenderHeight = (Health_Back.H * Max(RagePlayerOwner.Health, 0)) / ZPRI.DefaultHealth;
 
 	// Filled Health level
 	Canvas.SetPos(sX, sY);
