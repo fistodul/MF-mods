@@ -6,8 +6,7 @@ class ZombieGame extends RageTeamGame config;
 // Exponent influencing zombie strength, recommended values: 0.16 - 0.2
 var config float Z_BiasExp;
 
-var config bool bZombieWeapons; // Can zombies use weapons at all
-var config bool bZombieCrateWeapons; // If so, can they use weapon crates
+var config int bZombieWeapons; // Zombie weapon ability (0 - 3)
 var config bool bZombieLifeSteal; // Consume the flesh of the fallen to regenerate...
 
 var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
@@ -91,19 +90,18 @@ function BecomeZombie(Pawn P)
     //P.AirControl = P.Default.AirControl * 1.75;
     //P.LadderSpeed = P.Default.LadderSpeed * 1.5;
 
-    if (bKillTransform || !bZombieCrateWeapons) {
+    if (bZombieWeapons < 2)
         StripRanged(P);
-	    if (P.FindInventoryType(class'ZombieKnife') == None) {
-            GiveWeapon(P, "ZombieGame.ZombieKnife");
-        }
-    }
+
+    if (P.FindInventoryType(class'ZombieKnife') == None)
+        GiveWeapon(P, "ZombieGame.ZombieKnife");
 }
 
 // Strip ranged items
 function StripRanged(Pawn P)
 {
     local Inventory inv; // Inv.Next
-    for( Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory )
+    for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
     {
         if (!IsMeleeItem(Inv))
             Inv.Destroy();
@@ -116,9 +114,8 @@ function GiveMelee(Pawn P)
     local int i;
     for (i = 0; i < ArrayCount(MeleeItems); i++)
     {
-        if (P.FindInventoryType(MeleeItems[i]) == None) {
+        if (P.FindInventoryType(MeleeItems[i]) == None)
             GiveWeapon(P, MeleeItems[i].outer.name $ "." $ MeleeItems[i].Name);
-        }
     }
 }
 
@@ -175,7 +172,8 @@ function bool ChangeTeam(Pawn P, int num)
 
 simulated function PreBeginPlay()
 {
-    if (bZombieInfect) {
+    if (bZombieInfect)
+    {
         FragLimit = 3;
         bScoreTeamKills = false;
     }
@@ -206,7 +204,8 @@ function PostBeginPlay()
         {
             PS = PlayerStart(NP);
 
-            if (PS.TeamNumber == 255) {
+            if (PS.TeamNumber == 255)
+            {
                 if (IsSpawnFarEnough(PS, 0) && IsSpawnFarEnough(PS, 1))
                     AddZombieSpawn(PS);
             }
@@ -242,22 +241,25 @@ function Killed(pawn killer, pawn victim, name damageType)
     if (IsOnTeam(killer, 1) && !IsOnTeam(victim, 1))
     {
         // Let the zombie feast...
-        if (bZombieLifeSteal) {
+        if (bZombieLifeSteal)
+        {
             UnitsAway = VSize(killer.Location - victim.Location) / MeleeDistance;
             HealthBoost = 30 * FMax(1.0 - UnitsAway, 0.0) + 0.5;
             killer.Health = Min(killer.Health + healthBoost, killer.Default.Health);
         }
 
         // Move the infected to red
-        if (bZombieInfect) {
-            if (Teams[0].Size <= 1) {
+        if (bZombieInfect)
+        {
+            if (Teams[0].Size <= 1)
+            {
                 killer.PlayerReplicationInfo.Score += 5;
                 Teams[1].Score += 1;
 
                 if (Teams[1].Score >= FragLimit)
                     EndGame("fraglimit");
 
-                // Go to the round if the team is wiped out
+                // Go to the next round if the team is wiped out
             }
 
             ChangeTeam(victim, 1);
@@ -268,7 +270,8 @@ function Killed(pawn killer, pawn victim, name damageType)
 // Applies buffs based on the game state at the time of respawn
 function bool RestartPlayer(pawn P)
 {
-    if (Super.RestartPlayer(P)) {
+    if (Super.RestartPlayer(P))
+    {
         if (IsOnTeam(P, 1))
             BecomeZombie(P);
         else
@@ -304,7 +307,8 @@ function bool IsForTeam(Pawn P, actor candidate)
             continue;
 
         UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
-        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team)) {
+        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team))
+        {
             if (UnitsAway < 5)
                 friendlyPlayers++;
         }
@@ -366,7 +370,8 @@ function Logout(pawn Exiting)
 
 function bool SetEndCams(string Reason)
 {
-	if (Super.SetEndCams(Reason)) {
+	if (Super.SetEndCams(Reason))
+    {
         if (Teams[0].Score > Teams[1].Score)
             GameReplicationInfo.GameEndedComments = "Humans have survived the apocalypse!";
         else
@@ -399,8 +404,7 @@ event PlayerPawn Login
 defaultproperties
 {
     Z_BiasExp=0.18
-    bZombieWeapons=true
-    bZombieCrateWeapons=false
+    bZombieWeapons=1
     bZombieLifeSteal=true
     bSpawnAnywhere=true
     bZombieInfect=true

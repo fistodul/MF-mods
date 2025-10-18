@@ -7,7 +7,3 @@ replication
 	reliable if (Role == ROLE_Authority)
 		DefaultHealth;
 }
-
-defaultproperties
-{
-}

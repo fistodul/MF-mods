@@ -15,20 +15,14 @@ auto state Dangerous
                     Other.TakeDamage (Damage * 3, Instigator, HitLocation, Location * 0, 'decapitated');
                 }
                 else
-                {
-                    //DamageAmount = Damage * Speed / MaxSpeed;
                     Other.TakeDamage(Damage, Pawn(OwnerKnife.Owner), HitLocation,  Location * 0, MyDamageType );
-                }
 
                 Velocity = Velocity * 0;
                 GotoState('Safe');
             }
         }
         else
-        {
-            // Treat as a wall
-            Bounce(Normal(Location-HitLocation), none);
-        }
+            Bounce(Normal(Location-HitLocation), none); // Treat as a wall
     }
 }
 

@@ -5,7 +5,7 @@ simulated function ETryLoadoutResult TryLoadoutZone()
     local ZombieGame ZG;
     ZG = ZombieGame(Level.Game);
 
-    if (PlayerReplicationInfo.Team != 1 || (ZG.bZombieWeapons && ZG.bZombieCrateWeapons))
+    if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 2)
         return Super.TryLoadoutZone();
     else
         return Loadout_None;
@@ -16,7 +16,7 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
     local ZombieGame ZG;
     ZG = ZombieGame(Level.Game);
 
-    if (PlayerReplicationInfo.Team != 1 || (ZG.bZombieWeapons && ZG.bZombieCrateWeapons))
+    if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 1)
         return Super.TryLoadoutCrate();
     else
         return Loadout_None;
@@ -50,7 +50,7 @@ state PlayerWalking
         local ZombieGame ZG;
         ZG = ZombieGame(Level.Game);
 
-        if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons)
+        if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 0)
             Super.TryLoadout();
         else
             ClientMessage("Nice try, zombie!");
