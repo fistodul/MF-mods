@@ -104,7 +104,12 @@ function StripRanged(Pawn P)
     for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
     {
         if (!IsMeleeItem(Inv))
+        {
             Inv.Destroy();
+
+            if (ClassIsChildOf(Inv.Class, class'AdrenalineShot'))
+                GiveWeapon(P, "ZombieGame.ZombieShot");
+        }
     }
 }
 
@@ -181,7 +186,7 @@ simulated function PreBeginPlay()
         FragLimit = 30;
 
     Super.PreBeginPlay();
-	ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = bZombieInfect;
+    ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = bZombieInfect;
 }
 
 function PostBeginPlay()
@@ -361,7 +366,7 @@ function EndGame(string Reason)
 
 function Logout(pawn Exiting)
 {
-	Super.Logout(Exiting);
+    Super.Logout(Exiting);
 
     // Restore defaults individually
     Exiting.Default.Health = SavedHealth;
@@ -370,7 +375,7 @@ function Logout(pawn Exiting)
 
 function bool SetEndCams(string Reason)
 {
-	if (Super.SetEndCams(Reason))
+    if (Super.SetEndCams(Reason))
     {
         if (Teams[0].Score > Teams[1].Score)
             GameReplicationInfo.GameEndedComments = "Humans have survived the apocalypse!";
@@ -411,7 +416,7 @@ defaultproperties
     bKillTransform=false
     MeleeDistance=600
     MeleeItems(2)=class'ZombieKnife'
-    MeleeItems(1)=class'AdrenalineShot'
+    MeleeItems(1)=class'ZombieShot'
     MeleeItems(0)=class'RageArmour'
     GameName="Zombie Mode"
     TimeLimit=9

@@ -5,7 +5,7 @@ simulated function ETryLoadoutResult TryLoadoutZone()
     local ZombieGame ZG;
     ZG = ZombieGame(Level.Game);
 
-    if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 2)
+    if (ZG == None || PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 2)
         return Super.TryLoadoutZone();
     else
         return Loadout_None;
@@ -16,7 +16,7 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
     local ZombieGame ZG;
     ZG = ZombieGame(Level.Game);
 
-    if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 1)
+    if (ZG == None || PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 1)
         return Super.TryLoadoutCrate();
     else
         return Loadout_None;
@@ -29,17 +29,20 @@ state PlayerWalking
         local ZombieGame ZG;
         ZG = ZombieGame(Level.Game);
 
-        if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
-            Damage /= 10;
-
-        if (
-            ZG.bZombieInfect && ZG.bKillTransform && PlayerReplicationInfo.Team != 1 &&
-            instigatedBy != none && instigatedBy.PlayerReplicationInfo != none && 
-            Health - Damage <= 0 && instigatedBy.PlayerReplicationInfo.Team == 1
-        )
+        if (ZG != None)
         {
-            Damage = 0;
-            ZG.Killed(instigatedBy, self, damageType);
+            if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
+                Damage /= 10;
+
+            if (
+                ZG.bZombieInfect && ZG.bKillTransform && PlayerReplicationInfo.Team != 1 &&
+                instigatedBy != none && instigatedBy.PlayerReplicationInfo != none && 
+                Health - Damage <= 0 && instigatedBy.PlayerReplicationInfo.Team == 1
+            )
+            {
+                Damage = 0;
+                ZG.Killed(instigatedBy, self, damageType);
+            }
         }
 
         Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
@@ -50,7 +53,7 @@ state PlayerWalking
         local ZombieGame ZG;
         ZG = ZombieGame(Level.Game);
 
-        if (PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 0)
+        if (ZG == None || PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 0)
             Super.TryLoadout();
         else
             ClientMessage("Nice try, zombie!");

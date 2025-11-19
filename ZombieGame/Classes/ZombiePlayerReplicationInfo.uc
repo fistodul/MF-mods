@@ -4,6 +4,6 @@ var int DefaultHealth;
 
 replication
 {
-	reliable if (Role == ROLE_Authority)
-		DefaultHealth;
+    reliable if (Role == ROLE_Authority)
+        DefaultHealth;
 }
