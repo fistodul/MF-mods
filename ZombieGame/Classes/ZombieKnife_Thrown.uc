@@ -22,7 +22,7 @@ auto state Dangerous
             }
         }
         else
-            Bounce(Normal(Location-HitLocation), none); // Treat as a wall
+            Bounce(Normal(Location-HitLocation), None); // Treat as a wall
     }
 }
 

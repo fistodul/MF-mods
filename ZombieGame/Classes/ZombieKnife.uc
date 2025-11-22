@@ -56,7 +56,7 @@ function Slash()
         PlayerPawn(Owner).ShakeView(ShakeTime, ShakeMag, ShakeVert);
 
     Other.TakeDamage(SlashDamage, Pawn(Owner), HitLocation, 40000 * X + 24000 * Z, MyDamageType);
-    LastHit = none;
+    LastHit = None;
 }
 
 function ThrowKnife ()

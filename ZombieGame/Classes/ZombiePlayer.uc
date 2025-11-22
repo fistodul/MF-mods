@@ -36,7 +36,7 @@ state PlayerWalking
 
             if (
                 ZG.bZombieInfect && ZG.bKillTransform && PlayerReplicationInfo.Team != 1 &&
-                instigatedBy != none && instigatedBy.PlayerReplicationInfo != none && 
+                instigatedBy != None && instigatedBy.PlayerReplicationInfo != None && 
                 Health - Damage <= 0 && instigatedBy.PlayerReplicationInfo.Team == 1
             )
             {

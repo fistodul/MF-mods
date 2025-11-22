@@ -362,7 +362,7 @@ function NavigationPoint PickSpawn(Pawn P)
 
 function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional string incomingName)
 {
-    if (bSpawnAnywhere && P.PlayerReplicationInfo != none)
+    if (bSpawnAnywhere && P != None && P.PlayerReplicationInfo != None)
         return PickSpawn(P);
 
     // fallback to normal behavior
