@@ -21,7 +21,6 @@ var NavigationPoint ZombieSpawns[50];
 var int NumZombieSpawns;
 
 // Allows changing the default values and restoring them without guessing
-var int SavedHealth;
 var float SavedJumpZ;
 
 var class<Inventory> MeleeItems[3];
@@ -41,7 +40,6 @@ function bool IsMeleeItem(Inventory Inv)
 function BecomeHuman(Pawn P)
 {
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed;
-    P.Default.Health = SavedHealth;
     ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).DefaultHealth = P.Default.Health;
     P.Health = P.Default.Health;
     P.MaxCarry = P.Default.MaxCarry;
@@ -64,16 +62,18 @@ function BecomeHuman(Pawn P)
 // Buff physical prowess based on scaled defaults
 function BecomeZombie(Pawn P)
 {
+    local ZombiePlayerReplicationInfo ZPRI;
     local float boost;
+
+    ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
     boost = FClamp(
         (float(Teams[0].Size) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
         1.0, 1.25
     );
 
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.45 * boost;
-    P.Default.Health = SavedHealth * 3.3 * boost;
-    ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).DefaultHealth = P.Default.Health;
-    P.Health = P.Default.Health;
+    ZPRI.DefaultHealth = P.Default.Health * 3.3 * boost;
+    P.Health = ZPRI.DefaultHealth;
     P.MaxCarry = P.Default.MaxCarry - 2;
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
@@ -208,7 +208,6 @@ function PostBeginPlay()
     local LoadoutBlocker LB;
 
     Super.PostBeginPlay();
-    SavedHealth = class'Pawn'.Default.Health;
     SavedJumpZ = class'Pawn'.Default.JumpZ;
 
     NumHumanSpawns = 0;
@@ -251,6 +250,7 @@ function Killed(pawn killer, pawn victim, name damageType)
 {
     local float UnitsAway;
     local int HealthBoost;
+    local ZombiePlayerReplicationInfo ZPRI;
 
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
@@ -262,7 +262,9 @@ function Killed(pawn killer, pawn victim, name damageType)
         {
             UnitsAway = VSize(killer.Location - victim.Location) / MeleeDistance;
             HealthBoost = 30 * FMax(1.0 - UnitsAway, 0.0) + 0.5;
-            killer.Health = Min(killer.Health + healthBoost, killer.Default.Health);
+
+            ZPRI = ZombiePlayerReplicationInfo(killer.PlayerReplicationInfo);
+            killer.Health = Min(killer.Health + healthBoost, ZPRI.DefaultHealth);
         }
 
         // Move the infected to red
@@ -372,7 +374,6 @@ function EndGame(string Reason)
     Super.EndGame(Reason);
 
     // Restore defaults globally
-    class'Pawn'.Default.Health = SavedHealth;
     class'Pawn'.Default.JumpZ  = SavedJumpZ;
 }
 
@@ -381,7 +382,6 @@ function Logout(pawn Exiting)
     Super.Logout(Exiting);
 
     // Restore defaults individually
-    Exiting.Default.Health = SavedHealth;
     Exiting.Default.JumpZ  = SavedJumpZ;
 }
 
