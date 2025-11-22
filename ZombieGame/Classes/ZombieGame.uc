@@ -90,11 +90,28 @@ function BecomeZombie(Pawn P)
     //P.AirControl = P.Default.AirControl * 1.75;
     //P.LadderSpeed = P.Default.LadderSpeed * 1.5;
 
+    TransformItems(P);
     if (bZombieWeapons < 2)
         StripRanged(P);
+}
 
-    if (P.FindInventoryType(class'ZombieKnife') == None)
-        GiveWeapon(P, "ZombieGame.ZombieKnife");
+// Give Zombie equivalents to Human items
+function TransformItems(Pawn P)
+{
+    local Inventory inv; // Inv.Next
+    for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
+    {
+        switch (Inv.Class) {
+            case class'AdrenalineShot':
+                Inv.Destroy();
+                GiveWeapon(P, "ZombieGame.ZombieShot");
+                break;
+            case class'RageKnife':
+                Inv.Destroy();
+                GiveWeapon(P, "ZombieGame.ZombieKnife");
+                break;
+        }
+    }
 }
 
 // Strip ranged items
@@ -104,12 +121,7 @@ function StripRanged(Pawn P)
     for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
     {
         if (!IsMeleeItem(Inv))
-        {
             Inv.Destroy();
-
-            if (ClassIsChildOf(Inv.Class, class'AdrenalineShot'))
-                GiveWeapon(P, "ZombieGame.ZombieShot");
-        }
     }
 }
 
