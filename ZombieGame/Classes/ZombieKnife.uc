@@ -45,8 +45,8 @@ function Slash()
     GetAxes(Pawn(owner).ViewRotation, X, Y, Z);
 
     Start = Owner.Location + CalcDrawOffset() + FireOffset.X * X + FireOffset.Y * Y + FireOffset.Z * Z;
-    AdjustedAim = pawn(owner).AdjustAim(1000000, Start, AimError, False, False);    
-    EndTrace = Owner.Location + (Range * vector(AdjustedAim)); 
+    AdjustedAim = pawn(owner).AdjustAim(1000000, Start, AimError, False, False);
+    EndTrace = Owner.Location + (Range * vector(AdjustedAim));
     Other = Pawn(Owner).TraceShot(HitLocation, HitNormal, EndTrace, Start);
 
     if ((Other == None) || (Other == Owner) || (Other == self))
@@ -77,5 +77,5 @@ defaultproperties
 {
     SlashDamage=75
     Range=100
-    ProjectileClass=class'ZombieKnife_Thrown'
+    ProjectileClass=Class'ZombieKnife_Thrown'
 }

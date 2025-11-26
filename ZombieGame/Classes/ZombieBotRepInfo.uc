@@ -1,4 +1,4 @@
-class ZombiePlayerReplicationInfo expands PlayerReplicationInfo;
+class ZombieBotRepInfo expands RageBotRepInfo;
 
 var int DefaultHealth;
 

@@ -8,8 +8,8 @@ auto state Dangerous
         {
             if (bCanHitOwner == true || other != OwnerKnife.Owner)
             {
-                // damage actor and stick in him            
-                if (Other.bIsPawn && Pawn(Other).bIsPlayer && !Other.IsA('EnginePhysical') && (HitLocation.Z - Other.Location.Z > 0.80 * Other.CollisionHeight) 
+                // damage actor and stick in him
+                if (Other.bIsPawn && Pawn(Other).bIsPlayer && !Other.IsA('EnginePhysical') && (HitLocation.Z - Other.Location.Z > 0.80 * Other.CollisionHeight)
                     && (instigator.IsA('PlayerPawn') || (instigator.IsA('EngineBot') && !EngineBot(Instigator).bNovice)))
                 {
                     Other.TakeDamage (Damage * 3, Instigator, HitLocation, Location * 0, 'decapitated');

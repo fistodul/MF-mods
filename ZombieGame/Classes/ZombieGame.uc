@@ -102,11 +102,11 @@ function TransformItems(Pawn P)
     for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
     {
         switch (Inv.Class) {
-            case class'AdrenalineShot':
+            case Class'AdrenalineShot':
                 Inv.Destroy();
                 GiveWeapon(P, "ZombieGame.ZombieShot");
                 break;
-            case class'RageKnife':
+            case Class'RageKnife':
                 Inv.Destroy();
                 GiveWeapon(P, "ZombieGame.ZombieKnife");
                 break;
@@ -140,7 +140,7 @@ function GiveMelee(Pawn P)
 function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
 {
     local PlayerStart PS;
-    foreach RadiusActors(class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
+    foreach RadiusActors(Class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
     {
         if (PS.TeamNumber == team)
             return false;
@@ -189,6 +189,9 @@ function bool ChangeTeam(Pawn P, int num)
 
 simulated function PreBeginPlay()
 {
+    local ZombieReplicationInfo ZRI;
+    ZRI = ZombieReplicationInfo(GameReplicationInfo);
+
     if (bZombieInfect)
     {
         FragLimit = 3;
@@ -198,7 +201,8 @@ simulated function PreBeginPlay()
         FragLimit = 30;
 
     Super.PreBeginPlay();
-    ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = bZombieInfect;
+    ZRI.bZombieInfect = bZombieInfect;
+    ZRI.bKillTransform = bKillTransform;
 }
 
 function PostBeginPlay()
@@ -208,7 +212,7 @@ function PostBeginPlay()
     local LoadoutBlocker LB;
 
     Super.PostBeginPlay();
-    SavedJumpZ = class'Pawn'.Default.JumpZ;
+    SavedJumpZ = Class'Pawn'.Default.JumpZ;
 
     NumHumanSpawns = 0;
     NumZombieSpawns = 0;
@@ -232,7 +236,7 @@ function PostBeginPlay()
             AddZombieSpawn(NP);
     }
 
-    foreach AllActors(class'LoadoutBlocker', LB)
+    foreach AllActors(Class'LoadoutBlocker', LB)
         LB.Destroy();
 
     // if nothing's found, fallback to any NavigationPoint (defensive)
@@ -374,7 +378,7 @@ function EndGame(string Reason)
     Super.EndGame(Reason);
 
     // Restore defaults globally
-    class'Pawn'.Default.JumpZ  = SavedJumpZ;
+    Class'Pawn'.Default.JumpZ  = SavedJumpZ;
 }
 
 function Logout(pawn Exiting)
@@ -409,7 +413,7 @@ event PlayerPawn Login
 )
 {
     local PlayerPawn P;
-    P = Super.Login(Portal, Options, Error, class'ZombiePlayer');
+    P = Super.Login(Portal, Options, Error, Class'ZombiePlayer');
 
     if (P != None && P.PlayerReplicationInfo.Team == 1)
         P.PlayerRestartState = 'PlayerWalking';
@@ -427,12 +431,14 @@ defaultproperties
     bZombieInfect=true
     bKillTransform=false
     MeleeDistance=600
-    MeleeItems(2)=class'ZombieKnife'
-    MeleeItems(1)=class'ZombieShot'
-    MeleeItems(0)=class'RageArmour'
+    MeleeItems(2)=Class'ZombieKnife'
+    MeleeItems(1)=Class'ZombieShot'
+    MeleeItems(0)=Class'RageArmour'
     GameName="Zombie Mode"
     TimeLimit=9
     StartUpTeamMessage="You are a"
+    InstructionSound=Sound'RagePlayerVoice.Fire_At_Will'
+    BotConfigType=Class'ZombieBotInfo'
     TeamColor(0)="Human"
     TeamColor(1)="Zombie"
     FriendlyFireScale=0.01
@@ -441,9 +447,9 @@ defaultproperties
     bBalancing=true
     MapPrefix="ZM-"
     BeaconName="ZM"
-    DefaultPlayerClass=class'ZombiePlayer'
-    GameReplicationInfoClass=class'ZombieReplicationInfo'
-    HUDType=class'ZombieHUD'
-    ScoreBoardType=class'ZombieScoreBoard'
-    DMMessageClass=class'ZombieMessageDM'
+    DefaultPlayerClass=Class'ZombiePlayer'
+    GameReplicationInfoClass=Class'ZombieReplicationInfo'
+    HUDType=Class'ZombieHUD'
+    ScoreBoardType=Class'ZombieScoreBoard'
+    DMMessageClass=Class'ZombieMessageDM'
 }

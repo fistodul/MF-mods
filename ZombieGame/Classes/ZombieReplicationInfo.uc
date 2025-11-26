@@ -1,11 +1,12 @@
 class ZombieReplicationInfo extends RageTeamReplicationInfo;
 
 var bool bZombieInfect;
+var bool bKillTransform;
 
 simulated function String GetGoalMessage(PlayerPawn Player)
 {
     local String EnemyTeamName;
-    
+
     if (bZombieInfect && FragLimit > 0)
         return GoalStrings[1] $ FragLimit $ " times!";
 

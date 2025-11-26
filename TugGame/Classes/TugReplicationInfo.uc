@@ -1,5 +1,7 @@
 class TugReplicationInfo extends RageTeamReplicationInfo;
 
+var bool bKillTransform;
+
 simulated function String GetGoalMessage(PlayerPawn Player)
 {
     return GoalStrings[0] $ FragLimit $ " times!";

@@ -17,7 +17,7 @@ var int NumRedSpawns;
 function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
 {
     local PlayerStart PS;
-    foreach RadiusActors(class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
+    foreach RadiusActors(Class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
     {
         if (PS.TeamNumber == team)
             return false;
@@ -42,6 +42,12 @@ function AddRedSpawn(NavigationPoint NP)
         return;
 
     RedSpawns[NumRedSpawns++] = NP;
+}
+
+simulated function PreBeginPlay()
+{
+    Super.PreBeginPlay();
+    TugReplicationInfo(GameReplicationInfo).bKillTransform = bKillTransform;
 }
 
 function PostBeginPlay()
@@ -177,7 +183,7 @@ event PlayerPawn Login
 )
 {
     if (bKillTransform)
-        SpawnClass = class'TugPlayer';
+        SpawnClass = Class'TugPlayer';
 
     return Super.Login(Portal, Options, Error, SpawnClass);
 }
@@ -188,6 +194,7 @@ defaultproperties
     bKillTransform=false
     MeleeDistance=600
     GameName="Tug of war"
+    BotConfigType=Class'TugBotInfo'
     bScoreTeamKills=false
     FragLimit=3
     TimeLimit=9
@@ -197,7 +204,7 @@ defaultproperties
     bBalancing=true
     MapPrefix="TG-"
     BeaconName="TG"
-    DefaultPlayerClass=class'TugPlayer'
-    GameReplicationInfoClass=class'TugReplicationInfo'
-    HUDType=class'TugHUD'
+    DefaultPlayerClass=Class'TugPlayer'
+    GameReplicationInfoClass=Class'TugReplicationInfo'
+    HUDType=Class'TugHUD'
 }
