@@ -1,25 +1,20 @@
 class TugBotBase extends RageBot;
 
-// The same function as in ZombiePlayer except this time it IS global
+// The same function as in TugPlayer except this time it IS global
 function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
 {
     local TugGame TG;
     TG = TugGame(Level.Game);
 
-    if (ZG != None)
+    if (
+        TG.bKillTransform && instigatedBy != None &&
+        instigatedBy.PlayerReplicationInfo != None && Health - Damage <= 0 &&
+        PlayerReplicationInfo.Team != instigatedBy.PlayerReplicationInfo.Team
+    )
     {
-        if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
-            Damage /= 10;
-
-        if (
-            ZG.bZombieInfect && ZG.bKillTransform && PlayerReplicationInfo.Team != 1 &&
-            instigatedBy != None && instigatedBy.PlayerReplicationInfo != None &&
-            Health - Damage <= 0 && instigatedBy.PlayerReplicationInfo.Team == 1
-        )
-        {
-            Damage = 0;
-            ZG.Killed(instigatedBy, self, damageType);
-        }
+        Damage = 0;
+        Health = Default.Health;
+        TG.Killed(instigatedBy, self, damageType);
     }
 
 	Super.TakeDamage (Damage, instigatedBy, hitlocation, momentum, damageType);

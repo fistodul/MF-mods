@@ -5,5 +5,5 @@ defaultproperties
      BotName="Arthur"
      aFavouriteLoadout(0)=Class'RageWeapons.HeavyMachineGun'
      aFavouriteLoadout(1)=Class'RageWeapons.RageArmour'
-     VoicePitch=122
+     VoicePitch=110
 }
