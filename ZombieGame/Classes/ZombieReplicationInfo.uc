@@ -3,6 +3,12 @@ class ZombieReplicationInfo extends RageTeamReplicationInfo;
 var bool bZombieInfect;
 var bool bKillTransform;
 
+replication
+{
+    reliable if (Role == ROLE_Authority)
+        bZombieInfect, bKillTransform;
+}
+
 simulated function String GetGoalMessage(PlayerPawn Player)
 {
     local String EnemyTeamName;
@@ -20,7 +26,6 @@ simulated function String GetGoalMessage(PlayerPawn Player)
 
 defaultproperties
 {
-    bZombieInfect=true
     HumanString="*Player*"
     GoalStrings(1)="Survive the attack of the undead or become one of them "
 }

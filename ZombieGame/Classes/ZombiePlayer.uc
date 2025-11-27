@@ -36,9 +36,6 @@ function GlobalTakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vec
         if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
             Damage /= 10;
 
-        ClientMessage("bZombieInfect: " $ ZRI.bZombieInfect);
-        ClientMessage("bKillTransform: " $ ZRI.bKillTransform);
-
         if (
             ZRI.bZombieInfect && ZRI.bKillTransform && PlayerReplicationInfo.Team != 1 &&
             instigatedBy != None && instigatedBy.PlayerReplicationInfo != None &&

@@ -191,7 +191,7 @@ event PlayerPawn Login
 defaultproperties
 {
     bSpawnAnywhere=false
-    bKillTransform=false
+    bKillTransform=true
     MeleeDistance=600
     GameName="Tug of war"
     BotConfigType=Class'TugBotInfo'
