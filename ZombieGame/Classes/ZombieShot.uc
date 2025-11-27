@@ -14,7 +14,7 @@ function InjectDrug(Pawn Injectee)
     else if (ZBRI != None)
         MaxHealth = ZBRI.DefaultHealth;
     else
-        MaxHealth = Injectee.default.health;
+        MaxHealth = Injectee.Default.Health;
 
     if (Injectee.Health < MaxHealth)
     {

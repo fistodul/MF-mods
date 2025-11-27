@@ -297,7 +297,7 @@ function Killed(pawn killer, pawn victim, name damageType)
             else if (ZBRI != None)
                 MaxHealth = ZBRI.DefaultHealth;
             else
-                MaxHealth = killer.default.health;
+                MaxHealth = killer.Default.Health;
 
             killer.Health = Min(killer.Health + healthBoost, MaxHealth);
         }
