@@ -39,10 +39,20 @@ function bool IsMeleeItem(Inventory Inv)
 // Detroit
 function BecomeHuman(Pawn P)
 {
-    P.BaseGroundSpeed = P.Default.BaseGroundSpeed;
-    ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).DefaultHealth = P.Default.Health;
+    local ZombiePlayerReplicationInfo ZPRI;
+    local ZombieBotRepInfo ZBRI;
+
+    ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
+    ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
+
+    if (ZPRI != None)
+        ZPRI.DefaultHealth = P.Default.Health;
+    else if (ZBRI != None)
+        ZBRI.DefaultHealth = P.Default.Health;
+
     P.Health = P.Default.Health;
     P.MaxCarry = P.Default.MaxCarry;
+    P.BaseGroundSpeed = P.Default.BaseGroundSpeed;
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold;
     P.FallDeathThreshold = P.Default.FallDeathThreshold;
@@ -63,18 +73,28 @@ function BecomeHuman(Pawn P)
 function BecomeZombie(Pawn P)
 {
     local ZombiePlayerReplicationInfo ZPRI;
+    local ZombieBotRepInfo ZBRI;
     local float boost;
+    local int MaxHealth;
 
     ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
+    ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
+
     boost = FClamp(
         (float(Teams[0].Size) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
         1.0, 1.25
     );
 
-    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.45 * boost;
-    ZPRI.DefaultHealth = P.Default.Health * 3.3 * boost;
-    P.Health = ZPRI.DefaultHealth;
+    MaxHealth = P.Default.Health * 3.3 * boost;
+    P.Health = MaxHealth;
+
+    if (ZPRI != None)
+        ZPRI.DefaultHealth = MaxHealth;
+    else if (ZBRI != None)
+        ZBRI.DefaultHealth = MaxHealth;
+
     P.MaxCarry = P.Default.MaxCarry - 2;
+    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.45 * boost;
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5;
@@ -255,6 +275,8 @@ function Killed(pawn killer, pawn victim, name damageType)
     local float UnitsAway;
     local int HealthBoost;
     local ZombiePlayerReplicationInfo ZPRI;
+    local ZombieBotRepInfo ZBRI;
+    local int MaxHealth;
 
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
@@ -268,7 +290,16 @@ function Killed(pawn killer, pawn victim, name damageType)
             HealthBoost = 30 * FMax(1.0 - UnitsAway, 0.0) + 0.5;
 
             ZPRI = ZombiePlayerReplicationInfo(killer.PlayerReplicationInfo);
-            killer.Health = Min(killer.Health + healthBoost, ZPRI.DefaultHealth);
+            ZBRI = ZombieBotRepInfo(killer.PlayerReplicationInfo);
+
+            if (ZPRI != None)
+                MaxHealth = ZPRI.DefaultHealth;
+            else if (ZBRI != None)
+                MaxHealth = ZBRI.DefaultHealth;
+            else
+                MaxHealth = killer.default.health;
+
+            killer.Health = Min(killer.Health + healthBoost, MaxHealth);
         }
 
         // Move the infected to red
