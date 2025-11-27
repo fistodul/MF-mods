@@ -239,12 +239,12 @@ function PostBeginPlay()
     foreach AllActors(Class'LoadoutBlocker', LB)
         LB.Destroy();
 
-    // if nothing's found, fallback to any NavigationPoint (defensive)
+    // if nothing's found, fallback to any PlayerStart (defensive)
     if (NumZombieSpawns == 0)
     {
         for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
         {
-            if (NP.IsA('PlayerStart') || NP.IsA('RageDetPossibleKeyPos'))
+            if (NP.IsA('PlayerStart'))
                 AddZombieSpawn(NP);
         }
     }
