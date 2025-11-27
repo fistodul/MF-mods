@@ -2,10 +2,10 @@ class ZombiePlayer extends RagePlayerX;
 
 simulated function ETryLoadoutResult TryLoadoutZone()
 {
-    local ZombieGame ZG;
-    ZG = ZombieGame(Level.Game);
+    local ZombieReplicationInfo ZRI;
+    ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
-    if (ZG == None || PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 2)
+    if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 2)
         return Super.TryLoadoutZone();
     else
         return Loadout_None;
@@ -13,10 +13,10 @@ simulated function ETryLoadoutResult TryLoadoutZone()
 
 simulated function ETryLoadoutResult TryLoadoutCrate()
 {
-    local ZombieGame ZG;
-    ZG = ZombieGame(Level.Game);
+    local ZombieReplicationInfo ZRI;
+    ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
-    if (ZG == None || PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 1)
+    if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 1)
         return Super.TryLoadoutCrate();
     else
         return Loadout_None;
@@ -70,10 +70,10 @@ state PlayerWalking
 
     exec function TryLoadout()
     {
-        local ZombieGame ZG;
-        ZG = ZombieGame(Level.Game);
+        local ZombieReplicationInfo ZRI;
+        ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
-        if (ZG == None || PlayerReplicationInfo.Team != 1 || ZG.bZombieWeapons > 0)
+        if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 0)
             Super.TryLoadout();
         else
             ClientMessage("Nice try, zombie!");

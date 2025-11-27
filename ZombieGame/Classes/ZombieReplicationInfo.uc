@@ -2,6 +2,7 @@ class ZombieReplicationInfo extends RageTeamReplicationInfo;
 
 var bool bZombieInfect;
 var bool bKillTransform;
+var int zombieWeapons;
 
 replication
 {

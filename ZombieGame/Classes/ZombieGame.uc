@@ -6,7 +6,7 @@ class ZombieGame extends RageTeamGame config;
 // Exponent influencing zombie strength, recommended values: 0.16 - 0.2
 var config float Z_BiasExp;
 
-var config int bZombieWeapons; // Zombie weapon ability (0 - 3)
+var config int zombieWeapons; // Zombie weapon ability (0 - 3)
 var config bool bZombieLifeSteal; // Consume the flesh of the fallen to regenerate...
 
 var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
@@ -111,7 +111,7 @@ function BecomeZombie(Pawn P)
     //P.LadderSpeed = P.Default.LadderSpeed * 1.5;
 
     TransformItems(P);
-    if (bZombieWeapons < 2)
+    if (zombieWeapons < 2)
         StripRanged(P);
 }
 
@@ -223,6 +223,7 @@ simulated function PreBeginPlay()
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
     ZRI.bZombieInfect = bZombieInfect;
     ZRI.bKillTransform = bKillTransform;
+    ZRI.zombieWeapons = zombieWeapons;
 }
 
 function PostBeginPlay()
@@ -456,7 +457,7 @@ event PlayerPawn Login
 defaultproperties
 {
     Z_BiasExp=0.18
-    bZombieWeapons=1
+    zombieWeapons=1
     bZombieLifeSteal=true
     bSpawnAnywhere=true
     bZombieInfect=true
