@@ -113,6 +113,10 @@ function BecomeZombie(Pawn P)
     TransformItems(P);
     if (zombieWeapons < 2)
         StripRanged(P);
+    
+    // Feel the hunger in your hands
+    P.PendingWeapon = Weapon(P.FindInventoryType(Class'ZombieKnife'));
+    P.ChangedWeapon();
 }
 
 // Give Zombie equivalents to Human items
@@ -122,13 +126,13 @@ function TransformItems(Pawn P)
     for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
     {
         switch (Inv.Class) {
-            case Class'AdrenalineShot':
-                Inv.Destroy();
-                GiveWeapon(P, "ZombieGame.ZombieShot");
-                break;
             case Class'RageKnife':
                 Inv.Destroy();
                 GiveWeapon(P, "ZombieGame.ZombieKnife");
+                break;
+            case Class'AdrenalineShot':
+                Inv.Destroy();
+                GiveWeapon(P, "ZombieGame.ZombieShot");
                 break;
         }
     }
