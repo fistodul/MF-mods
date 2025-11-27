@@ -55,7 +55,7 @@ function Slash()
     if (PlayerPawn(Owner) != None)
         PlayerPawn(Owner).ShakeView(ShakeTime, ShakeMag, ShakeVert);
 
-    Other.TakeDamage(SlashDamage, Pawn(Owner), HitLocation, 40000 * X + 24000 * Z, MyDamageType);
+    Other.TakeDamage(SlashDamage, Pawn(Owner), HitLocation, 38000 * X + 24000 * Z, MyDamageType);
     LastHit = None;
 }
 
@@ -75,7 +75,7 @@ function ThrowKnife ()
 
 defaultproperties
 {
-    SlashDamage=75
+    SlashDamage=67
     Range=100
     ProjectileClass=Class'ZombieKnife_Thrown'
 }
