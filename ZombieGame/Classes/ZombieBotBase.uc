@@ -10,26 +10,29 @@ function AddLoadoutInventory()
 // The same function as in ZombiePlayer except this time it IS global
 function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
 {
+    if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
+        Damage /= 10;
+
+	Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
+}
+
+function Died(pawn Killer, name damageType, vector HitLocation)
+{
     local ZombieGame ZG;
     ZG = ZombieGame(Level.Game);
 
-    if (ZG != None)
+    if (
+        ZG != None && ZG.bZombieInfect && ZG.bKillTransform &&
+        Killer != None && Killer.PlayerReplicationInfo != None &&
+        PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
+    )
     {
-        if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
-            Damage /= 10;
-
-        if (
-            ZG.bZombieInfect && ZG.bKillTransform && PlayerReplicationInfo.Team != 1 &&
-            instigatedBy != None && instigatedBy.PlayerReplicationInfo != None &&
-            Health - Damage <= 0 && instigatedBy.PlayerReplicationInfo.Team == 1
-        )
-        {
-            Damage = 0;
-            ZG.Killed(instigatedBy, self, damageType);
-        }
+        Health = ZombiePlayerReplicationInfo(PlayerReplicationInfo).DefaultHealth;
+        ZG.Killed(Killer, self, damageType);
+        return;
     }
 
-	Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
+	Super.Died(Killer, damageType, HitLocation);
 }
 
 defaultproperties

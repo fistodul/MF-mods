@@ -1,23 +1,21 @@
 class TugBotBase extends RageBot;
 
-// The same function as in TugPlayer except this time it IS global
-function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
+function Died(pawn Killer, name damageType, vector HitLocation)
 {
     local TugGame TG;
     TG = TugGame(Level.Game);
 
     if (
-        TG.bKillTransform && instigatedBy != None &&
-        instigatedBy.PlayerReplicationInfo != None && Health - Damage <= 0 &&
-        PlayerReplicationInfo.Team != instigatedBy.PlayerReplicationInfo.Team
+        TG != None && TG.bKillTransform && Killer != None && 
+        Killer.PlayerReplicationInfo != None && Killer.PlayerReplicationInfo.Team == 1
     )
     {
-        Damage = 0;
         Health = Default.Health;
-        TG.Killed(instigatedBy, self, damageType);
+        TG.Killed(Killer, self, damageType);
+        return;
     }
 
-	Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
+	Super.Died(Killer, damageType, HitLocation);
 }
 
 defaultproperties

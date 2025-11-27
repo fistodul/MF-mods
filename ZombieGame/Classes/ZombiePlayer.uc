@@ -25,37 +25,31 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
 // Can't believe there wasn't one already there
 function GlobalTakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
 {
+    if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
+        Damage /= 10;
+}
+
+function Died(pawn Killer, name damageType, vector HitLocation)
+{
     local ZombieGame ZG;
     local ZombieReplicationInfo ZRI;
 
     ZG = ZombieGame(Level.Game);
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
-    if (ZG != None && ZRI != None)
+    if (
+        ZG != None && ZRI.bZombieInfect && ZRI.bKillTransform &&
+        Killer != None && Killer.PlayerReplicationInfo != None &&
+        PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
+    )
     {
-        if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
-            Damage /= 10;
-
-        if (
-            ZRI.bZombieInfect && ZRI.bKillTransform && PlayerReplicationInfo.Team != 1 &&
-            instigatedBy != None && instigatedBy.PlayerReplicationInfo != None &&
-            Health - Damage <= 0 && instigatedBy.PlayerReplicationInfo.Team == 1
-        )
-        {
-            Damage = 0;
-            ZG.Killed(instigatedBy, self, damageType);
-        }
+        Health = ZombiePlayerReplicationInfo(PlayerReplicationInfo).DefaultHealth;
+        ZG.Killed(Killer, self, damageType);
+        return;
     }
+
+	Super.Died(Killer, damageType, HitLocation);
 }
-
-/*state InCarState
-{
-    function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
-    {
-        GlobalTakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
-        Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
-    }
-}*/
 
 state PlayerSwimming
 {
