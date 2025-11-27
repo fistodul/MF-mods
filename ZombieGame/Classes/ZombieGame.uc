@@ -190,7 +190,7 @@ function bool ChangeTeam(Pawn P, int num)
 simulated function PreBeginPlay()
 {
     local ZombieReplicationInfo ZRI;
-    ZRI = ZombieReplicationInfo(GameReplicationInfo);
+    Super.PreBeginPlay();
 
     if (bZombieInfect)
     {
@@ -200,7 +200,7 @@ simulated function PreBeginPlay()
     else
         FragLimit = 30;
 
-    Super.PreBeginPlay();
+    ZRI = ZombieReplicationInfo(GameReplicationInfo);
     ZRI.bZombieInfect = bZombieInfect;
     ZRI.bKillTransform = bKillTransform;
 }
