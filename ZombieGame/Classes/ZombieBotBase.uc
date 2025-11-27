@@ -29,7 +29,7 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
         }
     }
 
-	Super.TakeDamage (Damage, instigatedBy, hitlocation, momentum, damageType);
+	Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
 }
 
 defaultproperties
