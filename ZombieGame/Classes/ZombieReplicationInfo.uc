@@ -7,7 +7,7 @@ var int zombieWeapons;
 replication
 {
     reliable if (Role == ROLE_Authority)
-        bZombieInfect, bKillTransform;
+        bZombieInfect, bKillTransform, zombieWeapons;
 }
 
 simulated function String GetGoalMessage(PlayerPawn Player)
