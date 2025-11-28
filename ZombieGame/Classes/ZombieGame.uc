@@ -98,7 +98,7 @@ function BecomeZombie(Pawn P)
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5;
-    P.Default.JumpZ = SavedJumpZ * 1.4 * boost;
+    P.Default.JumpZ = SavedJumpZ * 1.45 * boost;
     P.JumpZ = P.Default.JumpZ;
 
     P.GroundSpeed = P.BaseGroundSpeed - 80;
