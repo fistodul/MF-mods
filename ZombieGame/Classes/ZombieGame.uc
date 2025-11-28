@@ -94,7 +94,7 @@ function BecomeZombie(Pawn P)
         ZBRI.DefaultHealth = MaxHealth;
 
     P.MaxCarry = P.Default.MaxCarry - 2;
-    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.45 * boost;
+    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.55 * boost;
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5;
