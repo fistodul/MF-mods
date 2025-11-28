@@ -1,5 +1,27 @@
 class ZombiePlayer extends RagePlayerX;
 
+exec function BecomeHuman()
+{
+    local ZombieGame ZG;
+    ZG = ZombieGame(Level.Game);
+
+    if(ZG == None || !bGreatDane)
+		return;
+
+    ZG.BecomeHuman(self);
+}
+
+exec function BecomeZombie()
+{
+    local ZombieGame ZG;
+    ZG = ZombieGame(Level.Game);
+
+    if(ZG == None || !bGreatDane)
+		return;
+
+    ZG.BecomeZombie(self);
+}
+
 simulated function ETryLoadoutResult TryLoadoutZone()
 {
     local ZombieReplicationInfo ZRI;
