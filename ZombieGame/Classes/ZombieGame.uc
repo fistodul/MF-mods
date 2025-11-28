@@ -113,7 +113,7 @@ function BecomeZombie(Pawn P)
     TransformItems(P);
     if (zombieWeapons < 2)
         StripRanged(P);
-    
+
     // Feel the hunger in your hands
     P.PendingWeapon = Weapon(P.FindInventoryType(Class'ZombieKnife'));
     P.ChangedWeapon();
