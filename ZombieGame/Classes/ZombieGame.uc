@@ -61,6 +61,7 @@ function BecomeHuman(Pawn P)
 
     P.GroundSpeed = P.Default.GroundSpeed;
     P.WaterSpeed = P.Default.WaterSpeed;
+    P.UnderwaterTime = P.Default.UnderwaterTime;
     //P.AirSpeed = P.Default.AirSpeed;
 
     P.AccelRate = P.Default.AccelRate;
@@ -103,6 +104,7 @@ function BecomeZombie(Pawn P)
 
     P.GroundSpeed = P.BaseGroundSpeed - 80;
     P.WaterSpeed = P.Default.WaterSpeed * 2;
+    P.UnderwaterTime = P.Default.UnderwaterTime * 2;
     //P.AirSpeed = 200;
 
     P.AccelRate = P.Default.AccelRate * 1.15;
