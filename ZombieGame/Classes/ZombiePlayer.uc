@@ -1,11 +1,19 @@
 class ZombiePlayer extends RagePlayerX;
 
+replication
+{
+    reliable if (Role < ROLE_Authority)
+        BecomeHuman, BecomeZombie;
+}
+
 exec function BecomeHuman()
 {
     local ZombieGame ZG;
-    ZG = ZombieGame(Level.Game);
+    if (Role < ROLE_Authority)
+        return;
 
-    if(ZG == None || !bGreatDane)
+    ZG = ZombieGame(Level.Game);
+    if (ZG == None || !bAdmin && (Level.Netmode != NM_Standalone))
 		return;
 
     ZG.BecomeHuman(self);
@@ -14,9 +22,11 @@ exec function BecomeHuman()
 exec function BecomeZombie()
 {
     local ZombieGame ZG;
-    ZG = ZombieGame(Level.Game);
+    if (Role < ROLE_Authority)
+        return;
 
-    if(ZG == None || !bGreatDane)
+    ZG = ZombieGame(Level.Game);
+    if (ZG == None || !bAdmin && (Level.Netmode != NM_Standalone))
 		return;
 
     ZG.BecomeZombie(self);
