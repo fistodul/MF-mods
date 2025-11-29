@@ -60,8 +60,8 @@ function Died(pawn Killer, name damageType, vector HitLocation)
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
     if (
-        ZG != None && ZRI.bZombieInfect && ZRI.bKillTransform &&
-        Killer != None && Killer.PlayerReplicationInfo != None &&
+        ZG != None && ZRI.bZombieInfect && ZRI.bKillTransform && Killer != None &&
+        Killer != self && Killer.PlayerReplicationInfo != None &&
         PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
     )
     {
