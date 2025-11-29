@@ -20,9 +20,6 @@ var int MeleeDistance;
 var NavigationPoint ZombieSpawns[50];
 var int NumZombieSpawns;
 
-// Allows changing the default values and restoring them without guessing
-var float SavedJumpZ;
-
 var class<Inventory> MeleeItems[3];
 function bool IsMeleeItem(Inventory Inv)
 {
@@ -56,7 +53,6 @@ function BecomeHuman(Pawn P)
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold;
     P.FallDeathThreshold = P.Default.FallDeathThreshold;
-    P.Default.JumpZ = SavedJumpZ;
     P.JumpZ = P.Default.JumpZ;
 
     P.GroundSpeed = P.Default.GroundSpeed;
@@ -99,8 +95,7 @@ function BecomeZombie(Pawn P)
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5;
-    P.Default.JumpZ = SavedJumpZ * 1.45 * boost;
-    P.JumpZ = P.Default.JumpZ;
+    P.JumpZ = P.Default.JumpZ * 1.45 * boost;
 
     P.GroundSpeed = P.BaseGroundSpeed - 80;
     P.WaterSpeed = P.Default.WaterSpeed * 2;
@@ -239,8 +234,6 @@ function PostBeginPlay()
     local LoadoutBlocker LB;
 
     Super.PostBeginPlay();
-    SavedJumpZ = Class'Pawn'.Default.JumpZ;
-
     NumHumanSpawns = 0;
     NumZombieSpawns = 0;
 
@@ -409,22 +402,6 @@ function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional 
 
     // fallback to normal behavior
     return Super.FindPlayerStart(P, InTeam, incomingName);
-}
-
-function EndGame(string Reason)
-{
-    Super.EndGame(Reason);
-
-    // Restore defaults globally
-    Class'Pawn'.Default.JumpZ  = SavedJumpZ;
-}
-
-function Logout(pawn Exiting)
-{
-    Super.Logout(Exiting);
-
-    // Restore defaults individually
-    Exiting.Default.JumpZ  = SavedJumpZ;
 }
 
 function bool SetEndCams(string Reason)
