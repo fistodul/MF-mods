@@ -1,35 +1,39 @@
 class ZombiePlayer extends RagePlayerX;
 
+var ZombieGame ZG;
+
 replication
 {
     reliable if (Role < ROLE_Authority)
         BecomeHuman, BecomeZombie;
 }
 
+function ZombieGame GetZombieGame()
+{
+    if (ZG == None)
+    {
+        ZG = ZombieGame(Level.Game);
+        if (ZG == None)
+		    ZG = Spawn(Class'ZombieGame', self);
+    }
+
+    return ZG;
+}
+
 exec function BecomeHuman()
 {
-    local ZombieGame ZG;
-    if (Role < ROLE_Authority)
+    if (Role < ROLE_Authority || !bAdmin && (Level.Netmode != NM_Standalone))
         return;
 
-    ZG = ZombieGame(Level.Game);
-    if (ZG == None || !bAdmin && (Level.Netmode != NM_Standalone))
-		return;
-
-    ZG.BecomeHuman(self);
+    GetZombieGame().BecomeHuman(self);
 }
 
 exec function BecomeZombie()
 {
-    local ZombieGame ZG;
-    if (Role < ROLE_Authority)
+    if (Role < ROLE_Authority || !bAdmin && (Level.Netmode != NM_Standalone))
         return;
 
-    ZG = ZombieGame(Level.Game);
-    if (ZG == None || !bAdmin && (Level.Netmode != NM_Standalone))
-		return;
-
-    ZG.BecomeZombie(self);
+    GetZombieGame().BecomeZombie(self);
 }
 
 simulated function ETryLoadoutResult TryLoadoutZone()
@@ -63,20 +67,17 @@ function GlobalTakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vec
 
 function Died(pawn Killer, name damageType, vector HitLocation)
 {
-    local ZombieGame ZG;
     local ZombieReplicationInfo ZRI;
-
-    ZG = ZombieGame(Level.Game);
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
     if (
-        ZG != None && ZRI.bZombieInfect && ZRI.bKillTransform && Killer != None &&
+        ZRI != None && ZRI.bZombieInfect && ZRI.bKillTransform && Killer != None &&
         Killer != self && Killer.PlayerReplicationInfo != None &&
         PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
     )
     {
         Health = ZombiePlayerReplicationInfo(PlayerReplicationInfo).DefaultHealth;
-        ZG.Killed(Killer, self, damageType);
+        GetZombieGame().Killed(Killer, self, damageType);
         return;
     }
 
