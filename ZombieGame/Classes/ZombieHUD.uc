@@ -6,9 +6,15 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
     local float TextWidth, TextHeight;
     local TexRect HealthLevel;
     local ZombiePlayerReplicationInfo ZPRI;
+    local int MaxHealth;
 
     ZPRI = ZombiePlayerReplicationInfo(RagePlayerOwner.PlayerReplicationInfo);
-    RenderHeight = (Health_Back.H * Max(RagePlayerOwner.Health, 0)) / ZPRI.DefaultHealth;
+    if (ZPRI != None)
+        MaxHealth = ZPRI.DefaultHealth;
+    else
+        MaxHealth = RagePlayerOwner.Default.Health;
+
+    RenderHeight = (Health_Back.H * Max(RagePlayerOwner.Health, 0)) / MaxHealth;
 
     // Filled Health level
     Canvas.SetPos(sX, sY);
