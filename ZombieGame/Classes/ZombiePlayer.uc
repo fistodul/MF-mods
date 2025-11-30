@@ -22,7 +22,7 @@ function ZombieGame GetZombieGame()
 
 exec function BecomeHuman()
 {
-    if (Role < ROLE_Authority || !bAdmin && (Level.Netmode != NM_Standalone))
+    if (!bAdmin && (Level.Netmode != NM_Standalone))
         return;
 
     GetZombieGame().BecomeHuman(self);
@@ -30,7 +30,7 @@ exec function BecomeHuman()
 
 exec function BecomeZombie()
 {
-    if (Role < ROLE_Authority || !bAdmin && (Level.Netmode != NM_Standalone))
+    if (!bAdmin && (Level.Netmode != NM_Standalone))
         return;
 
     GetZombieGame().BecomeZombie(self);
