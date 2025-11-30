@@ -78,7 +78,7 @@ function BecomeZombie(Pawn P)
     ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
 
     boost = FClamp(
-        (float(Teams[0].Size) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
+        ((Teams[0].Size + 0.5) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
         1.0, 1.25
     );
 
