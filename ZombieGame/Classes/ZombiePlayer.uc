@@ -45,7 +45,7 @@ simulated function ETryLoadoutResult TryLoadoutZone()
     local ZombieReplicationInfo ZRI;
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
-    if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 2)
+    if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 3)
         return Super.TryLoadoutZone();
     else
         return Loadout_None;
@@ -56,7 +56,7 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
     local ZombieReplicationInfo ZRI;
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
-    if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 1)
+    if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 2)
         return Super.TryLoadoutCrate();
     else
         return Loadout_None;

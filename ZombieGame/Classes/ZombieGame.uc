@@ -6,7 +6,7 @@ class ZombieGame extends RageTeamGame config;
 // Exponent influencing zombie strength, recommended values: 0.16 - 0.2
 var config float Z_BiasExp;
 
-var config int zombieWeapons; // Zombie weapon ability (0 - 3)
+var config int zombieWeapons; // Zombie weapon ability (0 - 4)
 var config bool bZombieLifeSteal; // Consume the flesh of the fallen to regenerate...
 
 var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
