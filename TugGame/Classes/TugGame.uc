@@ -59,7 +59,7 @@ function PostBeginPlay()
     NumRedSpawns = 0;
 
     // collect PlayerStart actors with TeamNumber == 255 and detonation keys for everyone
-    for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
+    for (NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
         if (NP.IsA('PlayerStart') || NP.IsA('RageDetPossibleKeyPos'))
         {

@@ -5,12 +5,10 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
     local int RenderHeight;
     local float TextWidth, TextHeight;
     local TexRect HealthLevel;
-    local ZombiePlayerReplicationInfo ZPRI;
     local int MaxHealth;
 
-    ZPRI = ZombiePlayerReplicationInfo(RagePlayerOwner.PlayerReplicationInfo);
-    if (ZPRI != None)
-        MaxHealth = ZPRI.DefaultHealth;
+    if (RagePlayerOwner.IsA('ZombiePlayer'))
+        MaxHealth = ZombiePlayer(RagePlayerOwner).MaxHealth;
     else
         MaxHealth = RagePlayerOwner.Default.Health;
 
@@ -80,6 +78,61 @@ simulated function DrawGameSpecificStuff(canvas Canvas)
 
     // Draw the timer AFTER the super so it appears on top
     DrawScoreBar(Canvas, sX, sY, BlockSize * 2, BlockSize * 0.5, 2, 2, Countdown, 0, false);
+}
+
+simulated function DrawInventory ( canvas Canvas, int sX, int sY )
+{
+	local RageWeapon Weap;
+	local RageWeapon WeapT;
+	local int LeftToDraw, I;
+	local float CurX;
+	local Inventory Inv;
+	local RageWeapon aWeaps[12]; // Max of ten groups
+	local int WeapC;
+	local bool bSwapped;
+
+	// Find all rage weaps
+	for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
+	{
+		Weap = RageWeapon(Inv);
+		if ( Weap != none )
+		{
+			aWeaps[WeapC] = Weap;
+			if(WeapC < 11)
+				WeapC++;
+			else
+				break;
+		}
+	}
+
+	// Draw the groups
+	CurX = 0;
+	LeftToDraw = ZombiePlayer(RagePlayerOwner).MaxCarry;
+	Canvas.Style = ERenderStyle.STY_Alpha;
+
+	for (I = 0; I < WeapC; I++)
+	{
+		Weap = aWeaps[I];
+		if (Weap != None)
+		{
+			if (RagePlayerOwner.AmISelected(Weap))
+				DrawWeapIcon(Canvas, Weap, sX+CurX, sY, 2);
+			else
+				DrawWeapIcon(Canvas, Weap, sX+CurX, sY, TeamIndex());
+
+			CurX += Weap.CarrySize*BlockSize;
+			// Make sure knife (carrysize 0) is shown
+			if (Weap.CarrySize == 0)
+				CurX += BlockSize;
+
+			LeftToDraw -= Weap.CarrySize;
+		}
+	}
+
+	// Draw remainging empty boxes
+	Canvas.DrawColor = WhiteColor;
+	if (LeftToDraw > 0)
+		DrawEmptyIcon(Canvas, LeftToDraw, sX + CurX, sY);
 }
 
 defaultproperties

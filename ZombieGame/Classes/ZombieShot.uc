@@ -3,16 +3,11 @@ class ZombieShot extends AdrenalineShot;
 function InjectDrug(Pawn Injectee)
 {
     local int MaxHealth;
-    local ZombiePlayerReplicationInfo ZPRI;
-    local ZombieBotRepInfo ZBRI;
 
-    ZPRI = ZombiePlayerReplicationInfo(Injectee.PlayerReplicationInfo);
-    ZBRI = ZombieBotRepInfo(Injectee.PlayerReplicationInfo);
-
-    if (ZPRI != None)
-        MaxHealth = ZPRI.DefaultHealth;
-    else if (ZBRI != None)
-        MaxHealth = ZBRI.DefaultHealth;
+    if (Injectee.IsA('ZombiePlayer'))
+        MaxHealth = ZombiePlayer(Injectee).MaxHealth;
+    else if (Injectee.IsA('ZombieBotBase'))
+        MaxHealth = ZombieBotBase(Injectee).MaxHealth;
     else
         MaxHealth = Injectee.Default.Health;
 

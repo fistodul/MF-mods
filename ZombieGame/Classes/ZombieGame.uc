@@ -36,20 +36,24 @@ function bool IsMeleeItem(Inventory Inv)
 // Detroit
 function BecomeHuman(Pawn P)
 {
-    local ZombiePlayerReplicationInfo ZPRI;
-    local ZombieBotRepInfo ZBRI;
+    local ZombiePlayer ZP;
+    ZP = ZombiePlayer(P);
 
-    ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
-    ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
+    if (ZP != None)
+    {
+        ZP.MaxHealth = P.Default.Health;
+        ZP.MaxCarry = P.Default.MaxCarry;
+    }
+    else
+    {
+        if (P.IsA('ZombieBotBase'))
+            ZombieBotBase(P).MaxHealth = P.Default.Health;
 
-    if (ZPRI != None)
-        ZPRI.DefaultHealth = P.Default.Health;
-    else if (ZBRI != None)
-        ZBRI.DefaultHealth = P.Default.Health;
+        P.MaxCarry = P.Default.MaxCarry;
+    }
 
-    P.Health = P.Default.Health;
-    P.MaxCarry = P.Default.MaxCarry;
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed;
+    P.Health = P.Default.Health;
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold;
     P.FallDeathThreshold = P.Default.FallDeathThreshold;
@@ -69,29 +73,32 @@ function BecomeHuman(Pawn P)
 // Buff physical prowess based on scaled defaults
 function BecomeZombie(Pawn P)
 {
-    local ZombiePlayerReplicationInfo ZPRI;
-    local ZombieBotRepInfo ZBRI;
+    local ZombiePlayer ZP;
     local float boost;
     local int MaxHealth;
 
-    ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
-    ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
-
+    ZP = ZombiePlayer(P);
     boost = FClamp(
         ((Teams[0].Size + 0.5) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
         1.0, 1.25
     );
 
+    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.55 * boost;
     MaxHealth = P.Default.Health * 3.3 * boost;
     P.Health = MaxHealth;
 
-    if (ZPRI != None)
-        ZPRI.DefaultHealth = MaxHealth;
-    else if (ZBRI != None)
-        ZBRI.DefaultHealth = MaxHealth;
+    if (ZP != None)
+    {
+        ZP.MaxHealth = MaxHealth;
+        ZP.MaxCarry = P.Default.MaxCarry - 2;
+    }
+    else
+    {
+        if (P.IsA('ZombieBotBase'))
+            ZombieBotBase(P).MaxHealth = MaxHealth;
 
-    P.MaxCarry = P.Default.MaxCarry - 2;
-    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.55 * boost;
+        P.MaxCarry = P.Default.MaxCarry - 2;
+    }
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5;
@@ -120,7 +127,7 @@ function BecomeZombie(Pawn P)
 function TransformItems(Pawn P)
 {
     local Inventory inv; // Inv.Next
-    for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
+    for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
     {
         switch (Inv.Class) {
             case Class'RageKnife':
@@ -139,7 +146,7 @@ function TransformItems(Pawn P)
 function StripRanged(Pawn P)
 {
     local Inventory inv; // Inv.Next
-    for(Inv=P.Inventory; Inv!=None; Inv=Inv.Inventory)
+    for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
     {
         if (!IsMeleeItem(Inv))
             Inv.Destroy();
@@ -274,8 +281,6 @@ function Killed(pawn killer, pawn victim, name damageType)
 {
     local float UnitsAway;
     local int HealthBoost;
-    local ZombiePlayerReplicationInfo ZPRI;
-    local ZombieBotRepInfo ZBRI;
     local int MaxHealth;
 
     // Call parent first to do normal death processing
@@ -289,13 +294,10 @@ function Killed(pawn killer, pawn victim, name damageType)
             UnitsAway = VSize(killer.Location - victim.Location) / MeleeDistance;
             HealthBoost = 30 * FMax(1.0 - UnitsAway, 0.0) + 0.5;
 
-            ZPRI = ZombiePlayerReplicationInfo(killer.PlayerReplicationInfo);
-            ZBRI = ZombieBotRepInfo(killer.PlayerReplicationInfo);
-
-            if (ZPRI != None)
-                MaxHealth = ZPRI.DefaultHealth;
-            else if (ZBRI != None)
-                MaxHealth = ZBRI.DefaultHealth;
+            if (killer.IsA('ZombiePlayer'))
+                MaxHealth = ZombiePlayer(killer).MaxHealth;
+            else if (killer.IsA('ZombieBotBase'))
+                MaxHealth = ZombieBotBase(killer).MaxHealth;
             else
                 MaxHealth = killer.Default.Health;
 
