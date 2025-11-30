@@ -443,7 +443,7 @@ event PlayerPawn Login
 defaultproperties
 {
     Z_BiasExp=0.18
-    zombieWeapons=1
+    zombieWeapons=2
     bZombieLifeSteal=true
     bSpawnAnywhere=true
     bZombieInfect=true
