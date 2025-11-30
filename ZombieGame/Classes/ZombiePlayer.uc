@@ -1,11 +1,15 @@
 class ZombiePlayer extends RagePlayerX;
 
 var ZombieGame ZG;
+var int MaxHealth;
+var byte MaxCarry;
 
 replication
 {
     reliable if (Role < ROLE_Authority)
         BecomeHuman, BecomeZombie;
+    reliable if (Role == ROLE_Authority)
+        MaxHealth, MaxCarry;
 }
 
 function ZombieGame GetZombieGame()
@@ -76,12 +80,33 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
     )
     {
-        Health = ZombiePlayerReplicationInfo(PlayerReplicationInfo).DefaultHealth;
+        Health = MaxHealth;
         GetZombieGame().Killed(Killer, self, damageType);
         return;
     }
 
 	Super.Died(Killer, damageType, HitLocation);
+}
+
+simulated function bool CanIPickup(Inventory Weap)
+{
+	local int Count;
+	local Inventory Inv;
+
+	if (Weap == none || (Weap.CarrySize + CurrentCarry) > MaxCarry)
+        return false;
+
+	// Check how many of these i am allowed
+	for (Inv = Inventory; Inv != None; Inv = Inv.Inventory)
+	{
+		if (Inv.Class == Weap.Class)
+			Count++;
+	}
+
+	if (Count >= Weap.MaxCanCarry)
+        return false;
+
+	return true;
 }
 
 state PlayerSwimming
@@ -115,6 +140,7 @@ state PlayerWalking
 
 defaultproperties
 {
+    MaxCarry=6
     Footstep1=Sound'RagePlayerSounds.(All).stone01'
     Footstep2=Sound'RagePlayerSounds.(All).stone02'
     Footstep3=Sound'RagePlayerSounds.(All).stone03'
@@ -126,5 +152,4 @@ defaultproperties
     TeamMeshName="RageGfx.RagePlayer2Mesh"
     MenuName="Covert Trooper"
     Mesh=SkeletalMesh'RageGfx.RagePlayer2Mesh'
-    PlayerReplicationInfoClass=Class'ZombiePlayerReplicationInfo'
 }

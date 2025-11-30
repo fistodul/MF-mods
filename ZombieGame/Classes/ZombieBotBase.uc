@@ -1,5 +1,13 @@
 class ZombieBotBase extends RageBot;
 
+var int MaxHealth;
+
+replication
+{
+    reliable if (Role == ROLE_Authority)
+        MaxHealth;
+}
+
 // Zombies get jack shite
 function AddLoadoutInventory()
 {
@@ -27,7 +35,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
     )
     {
-        Health = ZombiePlayerReplicationInfo(PlayerReplicationInfo).DefaultHealth;
+        Health = MaxHealth;
         ZG.Killed(Killer, self, damageType);
         return;
     }
@@ -39,5 +47,4 @@ defaultproperties
 {
     bGoodDriver=True
     PreferedTeam=0
-    PlayerReplicationInfoClass=Class'ZombieBotRepInfo'
 }
