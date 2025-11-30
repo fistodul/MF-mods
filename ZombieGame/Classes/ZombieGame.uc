@@ -129,7 +129,8 @@ function TransformItems(Pawn P)
     local Inventory inv; // Inv.Next
     for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
     {
-        switch (Inv.Class) {
+        switch (Inv.Class)
+        {
             case Class'RageKnife':
                 Inv.Destroy();
                 GiveWeapon(P, "ZombieGame.ZombieKnife");
