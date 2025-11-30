@@ -9,14 +9,14 @@ replication
 }
 
 // Zombies get jack shite
-function AddLoadoutInventory()
+/*function AddLoadoutInventory()
 {
     local ZombieGame ZG;
     ZG = ZombieGame(Level.Game);
 
     if (ZG != None && ZG.zombieWeapons > 3 || PlayerReplicationInfo.Team != 1)
         Super.AddLoadoutInventory();
-}
+}*/
 
 // The same function as in ZombiePlayer except this time it IS global
 function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
