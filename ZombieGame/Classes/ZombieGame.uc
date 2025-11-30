@@ -123,6 +123,15 @@ function BecomeZombie(Pawn P)
     P.ChangedWeapon();
 }
 
+function TransformItem(Inventory Inv, string NewInv)
+{
+    local Pawn P;
+    P = Pawn(Inv.Owner);
+
+    Inv.Destroy();
+    GiveWeapon(P, NewInv);
+}
+
 // Give Zombie equivalents to Human items
 function TransformItems(Pawn P)
 {
@@ -132,12 +141,10 @@ function TransformItems(Pawn P)
         switch (Inv.Class)
         {
             case Class'RageKnife':
-                Inv.Destroy();
-                GiveWeapon(P, "ZombieGame.ZombieKnife");
+                TransformItem(Inv, "ZombieGame.ZombieKnife");
                 break;
             case Class'AdrenalineShot':
-                Inv.Destroy();
-                GiveWeapon(P, "ZombieGame.ZombieShot");
+                TransformItem(Inv, "ZombieGame.ZombieShot");
                 break;
         }
     }
