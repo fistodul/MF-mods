@@ -1,5 +1,12 @@
 class ZombieBotInfo extends RageBotInfo;
 
+function RageSetupBot(RageBot NewBot)
+{
+	Super.RageSetupBot(NewBot);
+    if (NewBot.PlayerReplicationInfo.Team == 1)
+        NewBot.FavoriteWeapon = Class'ZombieKnife';
+}
+
 defaultproperties
 {
     aAvailableBots(0)=Class'ZombieBot0'
