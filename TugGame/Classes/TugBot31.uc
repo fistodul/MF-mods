@@ -1,4 +1,4 @@
-class TugBot extends TugBotBase;
+class TugBot31 extends TugBotBase;
 
 defaultproperties
 {
