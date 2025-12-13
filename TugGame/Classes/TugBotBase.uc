@@ -6,8 +6,8 @@ function Died(pawn Killer, name damageType, vector HitLocation)
     TG = TugGame(Level.Game);
 
     if (
-        TG != None && TG.bKillTransform && Killer != None && 
-        Killer.PlayerReplicationInfo != None && Killer.PlayerReplicationInfo.Team == 1
+        TG != None && TG.bKillTransform && Killer != None && Killer.PlayerReplicationInfo != None &&
+        PlayerReplicationInfo.Team != Killer.PlayerReplicationInfo.Team
     )
     {
         Health = Default.Health;
