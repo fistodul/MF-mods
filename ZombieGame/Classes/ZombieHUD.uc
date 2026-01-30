@@ -52,7 +52,7 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
 
 simulated function DrawArmour (canvas Canvas, int sX, int sY)
 {
-	local int DrawArmour, RenderHeight, T, MaxCharge;
+	local int DrawArmour, RenderHeight, T;
 	local float TextWidth, TextHeight;
 	local TexRect ArmourLevel;
 	local Inventory Inv;
@@ -60,7 +60,6 @@ simulated function DrawArmour (canvas Canvas, int sX, int sY)
 
 	T = TeamIndex();
 	DrawArmour = 0;
-    MaxCharge = 100;
 
 	for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
 	{
@@ -74,10 +73,8 @@ simulated function DrawArmour (canvas Canvas, int sX, int sY)
 
 	if (Armour == None)
 		return;
-    else if (Armour.IsA('ZombieArmour'))
-        MaxCharge = 120;
 
-	RenderHeight = (Armour_Back.H * DrawArmour) / MaxCharge;
+	RenderHeight = (Armour_Back.H * DrawArmour) / Armour.Default.Charge;
 
 	// Filled Armour level
 	Canvas.SetPos(sX, sY);
