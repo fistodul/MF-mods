@@ -146,6 +146,8 @@ function TransformItems(Pawn P)
             case Class'AdrenalineShot':
                 TransformItem(Inv, "ZombieGame.ZombieShot");
                 break;
+            case Class'RageArmour':
+                TransformItem(Inv, "ZombieGame.ZombieArmour");
         }
     }
 }
@@ -458,7 +460,7 @@ defaultproperties
     MeleeDistance=600
     MeleeItems(2)=Class'ZombieKnife'
     MeleeItems(1)=Class'ZombieShot'
-    MeleeItems(0)=Class'RageArmour'
+    MeleeItems(0)=Class'ZombieArmour'
     GameName="Zombie Mode"
     TimeLimit=9
     StartUpTeamMessage="You are a"

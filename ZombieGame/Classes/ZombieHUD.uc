@@ -49,6 +49,63 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
     Canvas.DrawText (RagePlayerOwner.Health);
 }
 
+
+simulated function DrawArmour (canvas Canvas, int sX, int sY)
+{
+	local int DrawArmour, RenderHeight, T, MaxCharge;
+	local float TextWidth, TextHeight;
+	local TexRect ArmourLevel;
+	local Inventory Inv;
+	local RageArmour Armour;
+
+	T = TeamIndex();
+	DrawArmour = 0;
+    MaxCharge = 100;
+
+	for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
+	{
+		Armour = RageArmour(Inv);
+		if (Armour != None)
+		{
+			DrawArmour += Armour.Charge;
+			break;
+		}
+	}
+
+	if (Armour == None)
+		return;
+    else if (Armour.IsA('ZombieArmour'))
+        MaxCharge = 120;
+
+	RenderHeight = (Armour_Back.H * DrawArmour) / MaxCharge;
+
+	// Filled Armour level
+	Canvas.SetPos(sX, sY);
+	Canvas.Style = ERenderStyle.STY_Translucent;
+	Canvas.DrawColor = Colour_Sets[T];
+	ArmourLevel = Armour_Back;
+	ArmourLevel.Y += Armour_Back.H - RenderHeight;
+	ArmourLevel.H -= Armour_Back.H - RenderHeight;
+	RenderHeight *= RenderScale;
+	Canvas.SetPos (sX, sY + (Armour_Back.H * RenderScale) - RenderHeight);
+	DrawTexRect(Canvas, ArmourLevel, (Armour_Back.W + 4) * RenderScale, RenderHeight);
+
+	// Outline
+	Canvas.SetPos(sX, sY);
+	Canvas.Style = ERenderStyle.STY_Alpha ;
+	Canvas.DrawColor = WhiteColor;
+	DrawTexRect(Canvas, Armour_Team[T], Armour_Team[T].W * RenderScale, Armour_Team[T].H * RenderScale);
+
+	// Numerical Armour level
+	Canvas.Font = MyFonts.GetHUDMedFont(HUDSize);
+	Canvas.TextSize(DrawArmour, TextWidth, TextHeight);
+	Canvas.SetPos(
+        sX + (Armour_Team[T].W * RenderScale * 0.5) - (TextWidth * 0.75),
+        sY + (Armour_Team[T].H * RenderScale * 0.5) - (TextHeight * 0.5)
+    );
+	Canvas.DrawText (DrawArmour);
+}
+
 simulated function DrawGameSpecificStuff(canvas Canvas)
 {
     local float sX, sY;
