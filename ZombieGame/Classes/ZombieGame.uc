@@ -148,6 +148,7 @@ function TransformItems(Pawn P)
                 break;
             case Class'RageArmour':
                 TransformItem(Inv, "ZombieGame.ZombieArmour");
+                break;
         }
     }
 }
