@@ -426,7 +426,7 @@ function bool SetEndCams(string Reason)
         else
             GameReplicationInfo.GameEndedComments = "Zombies have taken over the world!";
 
-            return true;
+        return true;
     }
 
     return false;
