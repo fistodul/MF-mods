@@ -46,11 +46,10 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
         sY + (48 * RenderScale) - (TextHeight * 0.5)
     );
 
-    Canvas.DrawText (RagePlayerOwner.Health);
+    Canvas.DrawText(RagePlayerOwner.Health);
 }
 
-
-simulated function DrawArmour (canvas Canvas, int sX, int sY)
+simulated function DrawArmour(canvas Canvas, int sX, int sY)
 {
 	local int DrawArmour, RenderHeight, T;
 	local float TextWidth, TextHeight;
@@ -100,7 +99,7 @@ simulated function DrawArmour (canvas Canvas, int sX, int sY)
         sX + (Armour_Team[T].W * RenderScale * 0.5) - (TextWidth * 0.75),
         sY + (Armour_Team[T].H * RenderScale * 0.5) - (TextHeight * 0.5)
     );
-	Canvas.DrawText (DrawArmour);
+	Canvas.DrawText(DrawArmour);
 }
 
 simulated function DrawGameSpecificStuff(canvas Canvas)
