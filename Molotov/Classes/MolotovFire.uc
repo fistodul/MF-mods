@@ -19,8 +19,7 @@ simulated function PostBeginPlay()
 	TimePassed = 0.0;
 	DamageTickTimer = 0.0;
 
-	if (Role == ROLE_Authority)
-		SetTimer(0.1, true); // Check for damage every 0.1 seconds
+	SetTimer(0.1, true); // Check for damage every 0.1 seconds
 }
 
 simulated function Tick(float DeltaTime)
@@ -57,9 +56,6 @@ simulated function Tick(float DeltaTime)
 function Timer()
 {
 	local float DamageAmount;
-
-	if (Role != ROLE_Authority)
-		return;
 
 	// Calculate damage for this tick
 	DamageAmount = DamagePerSecond * 0.1;
