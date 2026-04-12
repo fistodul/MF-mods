@@ -13,5 +13,5 @@ simulated function Explosion(vector HitLocation, Rotator HitRotation)
 
 defaultproperties
 {
-    Damage=38.000000
+    Damage=40.000000
 }

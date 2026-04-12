@@ -82,7 +82,7 @@ function DamageNearby(float Damage)
 
 defaultproperties
 {
-	BurnDuration=5.5
+	BurnDuration=7.0
 	DamagePerSecond=20.0
     DrawType=DT_None
     CollisionRadius=150.000000
