@@ -19,7 +19,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         return;
     }
 
-	Super.Died(Killer, damageType, HitLocation);
+    Super.Died(Killer, damageType, HitLocation);
 }
 
 defaultproperties

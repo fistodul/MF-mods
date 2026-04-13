@@ -24,7 +24,7 @@ function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector mo
     if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
         Damage /= 10;
 
-	Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
+    Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
 }
 
 function Died(pawn Killer, name damageType, vector HitLocation)
@@ -43,7 +43,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         return;
     }
 
-	Super.Died(Killer, damageType, HitLocation);
+    Super.Died(Killer, damageType, HitLocation);
 }
 
 defaultproperties

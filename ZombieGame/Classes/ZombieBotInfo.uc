@@ -2,7 +2,7 @@ class ZombieBotInfo extends RageBotInfo;
 
 function RageSetupBot(RageBot NewBot)
 {
-	Super.RageSetupBot(NewBot);
+    Super.RageSetupBot(NewBot);
     //if (NewBot.PlayerReplicationInfo.Team == 1)
     NewBot.FavoriteWeapon = Class'ZombieKnife';
 }
@@ -25,20 +25,20 @@ defaultproperties
     aAvailableBots(13)=Class'ZombieBot13'
     aAvailableBots(14)=Class'ZombieBot14'
     aAvailableBots(15)=Class'ZombieBot15'
-	aAvailableBots(16)=Class'ZombieBot16'
-	aAvailableBots(17)=Class'ZombieBot17'
-	aAvailableBots(18)=Class'ZombieBot18'
-	aAvailableBots(19)=Class'ZombieBot19'
-	aAvailableBots(20)=Class'ZombieBot20'
-	aAvailableBots(21)=Class'ZombieBot21'
-	aAvailableBots(22)=Class'ZombieBot22'
-	aAvailableBots(23)=Class'ZombieBot23'
-	aAvailableBots(24)=Class'ZombieBot24'
-	aAvailableBots(25)=Class'ZombieBot25'
-	aAvailableBots(26)=Class'ZombieBot26'
-	aAvailableBots(27)=Class'ZombieBot27'
-	aAvailableBots(28)=Class'ZombieBot28'
-	aAvailableBots(29)=Class'ZombieBot29'
-	aAvailableBots(30)=Class'ZombieBot30'
-	aAvailableBots(31)=Class'ZombieBot31'
+    aAvailableBots(16)=Class'ZombieBot16'
+    aAvailableBots(17)=Class'ZombieBot17'
+    aAvailableBots(18)=Class'ZombieBot18'
+    aAvailableBots(19)=Class'ZombieBot19'
+    aAvailableBots(20)=Class'ZombieBot20'
+    aAvailableBots(21)=Class'ZombieBot21'
+    aAvailableBots(22)=Class'ZombieBot22'
+    aAvailableBots(23)=Class'ZombieBot23'
+    aAvailableBots(24)=Class'ZombieBot24'
+    aAvailableBots(25)=Class'ZombieBot25'
+    aAvailableBots(26)=Class'ZombieBot26'
+    aAvailableBots(27)=Class'ZombieBot27'
+    aAvailableBots(28)=Class'ZombieBot28'
+    aAvailableBots(29)=Class'ZombieBot29'
+    aAvailableBots(30)=Class'ZombieBot30'
+    aAvailableBots(31)=Class'ZombieBot31'
 }

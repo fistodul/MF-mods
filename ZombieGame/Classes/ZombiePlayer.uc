@@ -18,7 +18,7 @@ function ZombieGame GetZombieGame()
     {
         ZG = ZombieGame(Level.Game);
         if (ZG == None)
-		    ZG = Spawn(Class'ZombieGame', self);
+            ZG = Spawn(Class'ZombieGame', self);
     }
 
     return ZG;
@@ -85,28 +85,28 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         return;
     }
 
-	Super.Died(Killer, damageType, HitLocation);
+    Super.Died(Killer, damageType, HitLocation);
 }
 
 simulated function bool CanIPickup(Inventory Weap)
 {
-	local int Count;
-	local Inventory Inv;
+    local int Count;
+    local Inventory Inv;
 
-	if (Weap == none || (Weap.CarrySize + CurrentCarry) > MaxCarry)
+    if (Weap == none || (Weap.CarrySize + CurrentCarry) > MaxCarry)
         return false;
 
-	// Check how many of these i am allowed
-	for (Inv = Inventory; Inv != None; Inv = Inv.Inventory)
-	{
-		if (Inv.Class == Weap.Class)
-			Count++;
-	}
+    // Check how many of these i am allowed
+    for (Inv = Inventory; Inv != None; Inv = Inv.Inventory)
+    {
+        if (Inv.Class == Weap.Class)
+            Count++;
+    }
 
-	if (Count >= Weap.MaxCanCarry)
+    if (Count >= Weap.MaxCanCarry)
         return false;
 
-	return true;
+    return true;
 }
 
 state PlayerSwimming

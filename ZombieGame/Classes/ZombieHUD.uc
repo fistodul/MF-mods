@@ -51,55 +51,55 @@ simulated function DrawHealth(canvas Canvas, int sX, int sY)
 
 simulated function DrawArmour(canvas Canvas, int sX, int sY)
 {
-	local int DrawArmour, RenderHeight, T;
-	local float TextWidth, TextHeight;
-	local TexRect ArmourLevel;
-	local Inventory Inv;
-	local RageArmour Armour;
+    local int DrawArmour, RenderHeight, T;
+    local float TextWidth, TextHeight;
+    local TexRect ArmourLevel;
+    local Inventory Inv;
+    local RageArmour Armour;
 
-	T = TeamIndex();
-	DrawArmour = 0;
+    T = TeamIndex();
+    DrawArmour = 0;
 
-	for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
-	{
-		Armour = RageArmour(Inv);
-		if (Armour != None)
-		{
-			DrawArmour += Armour.Charge;
-			break;
-		}
-	}
+    for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
+    {
+        Armour = RageArmour(Inv);
+        if (Armour != None)
+        {
+            DrawArmour += Armour.Charge;
+            break;
+        }
+    }
 
-	if (Armour == None)
-		return;
+    if (Armour == None)
+        return;
 
-	RenderHeight = (Armour_Back.H * DrawArmour) / Armour.Default.Charge;
+    RenderHeight = (Armour_Back.H * DrawArmour) / Armour.Default.Charge;
 
-	// Filled Armour level
-	Canvas.SetPos(sX, sY);
-	Canvas.Style = ERenderStyle.STY_Translucent;
-	Canvas.DrawColor = Colour_Sets[T];
-	ArmourLevel = Armour_Back;
-	ArmourLevel.Y += Armour_Back.H - RenderHeight;
-	ArmourLevel.H -= Armour_Back.H - RenderHeight;
-	RenderHeight *= RenderScale;
-	Canvas.SetPos (sX, sY + (Armour_Back.H * RenderScale) - RenderHeight);
-	DrawTexRect(Canvas, ArmourLevel, (Armour_Back.W + 4) * RenderScale, RenderHeight);
+    // Filled Armour level
+    Canvas.SetPos(sX, sY);
+    Canvas.Style = ERenderStyle.STY_Translucent;
+    Canvas.DrawColor = Colour_Sets[T];
+    ArmourLevel = Armour_Back;
+    ArmourLevel.Y += Armour_Back.H - RenderHeight;
+    ArmourLevel.H -= Armour_Back.H - RenderHeight;
+    RenderHeight *= RenderScale;
+    Canvas.SetPos (sX, sY + (Armour_Back.H * RenderScale) - RenderHeight);
+    DrawTexRect(Canvas, ArmourLevel, (Armour_Back.W + 4) * RenderScale, RenderHeight);
 
-	// Outline
-	Canvas.SetPos(sX, sY);
-	Canvas.Style = ERenderStyle.STY_Alpha ;
-	Canvas.DrawColor = WhiteColor;
-	DrawTexRect(Canvas, Armour_Team[T], Armour_Team[T].W * RenderScale, Armour_Team[T].H * RenderScale);
+    // Outline
+    Canvas.SetPos(sX, sY);
+    Canvas.Style = ERenderStyle.STY_Alpha ;
+    Canvas.DrawColor = WhiteColor;
+    DrawTexRect(Canvas, Armour_Team[T], Armour_Team[T].W * RenderScale, Armour_Team[T].H * RenderScale);
 
-	// Numerical Armour level
-	Canvas.Font = MyFonts.GetHUDMedFont(HUDSize);
-	Canvas.TextSize(DrawArmour, TextWidth, TextHeight);
-	Canvas.SetPos(
+    // Numerical Armour level
+    Canvas.Font = MyFonts.GetHUDMedFont(HUDSize);
+    Canvas.TextSize(DrawArmour, TextWidth, TextHeight);
+    Canvas.SetPos(
         sX + (Armour_Team[T].W * RenderScale * 0.5) - (TextWidth * 0.75),
         sY + (Armour_Team[T].H * RenderScale * 0.5) - (TextHeight * 0.5)
     );
-	Canvas.DrawText(DrawArmour);
+    Canvas.DrawText(DrawArmour);
 }
 
 simulated function DrawGameSpecificStuff(canvas Canvas)
@@ -135,61 +135,61 @@ simulated function DrawGameSpecificStuff(canvas Canvas)
 
 simulated function DrawInventory ( canvas Canvas, int sX, int sY )
 {
-	local RageWeapon Weap;
-	local RageWeapon WeapT;
-	local int LeftToDraw, I;
-	local float CurX;
-	local Inventory Inv;
-	local RageWeapon aWeaps[12]; // Max of ten groups
-	local int WeapC;
-	local bool bSwapped;
+    local RageWeapon Weap;
+    local RageWeapon WeapT;
+    local int LeftToDraw, I;
+    local float CurX;
+    local Inventory Inv;
+    local RageWeapon aWeaps[12]; // Max of ten groups
+    local int WeapC;
+    local bool bSwapped;
 
-	// Find all rage weaps
-	for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
-	{
-		Weap = RageWeapon(Inv);
-		if (Weap != none)
-		{
-			aWeaps[WeapC] = Weap;
-			if (WeapC < 11)
-				WeapC++;
-			else
-				break;
-		}
-	}
+    // Find all rage weaps
+    for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)
+    {
+        Weap = RageWeapon(Inv);
+        if (Weap != none)
+        {
+            aWeaps[WeapC] = Weap;
+            if (WeapC < 11)
+                WeapC++;
+            else
+                break;
+        }
+    }
 
-	// Draw the groups
-	CurX = 0;
+    // Draw the groups
+    CurX = 0;
     Canvas.Style = ERenderStyle.STY_Alpha;
 
     if (RagePlayerOwner.IsA('ZombiePlayer'))
-	    LeftToDraw = ZombiePlayer(RagePlayerOwner).MaxCarry;
+        LeftToDraw = ZombiePlayer(RagePlayerOwner).MaxCarry;
     else
         LeftToDraw = RagePlayerOwner.MaxCarry;
 
-	for (I = 0; I < WeapC; I++)
-	{
-		Weap = aWeaps[I];
-		if (Weap != None)
-		{
-			if (RagePlayerOwner.AmISelected(Weap))
-				DrawWeapIcon(Canvas, Weap, sX + CurX, sY, 2);
-			else
-				DrawWeapIcon(Canvas, Weap, sX + CurX, sY, TeamIndex());
+    for (I = 0; I < WeapC; I++)
+    {
+        Weap = aWeaps[I];
+        if (Weap != None)
+        {
+            if (RagePlayerOwner.AmISelected(Weap))
+                DrawWeapIcon(Canvas, Weap, sX + CurX, sY, 2);
+            else
+                DrawWeapIcon(Canvas, Weap, sX + CurX, sY, TeamIndex());
 
-			CurX += Weap.CarrySize*BlockSize;
-			// Make sure knife (carrysize 0) is shown
-			if (Weap.CarrySize == 0)
-				CurX += BlockSize;
+            CurX += Weap.CarrySize*BlockSize;
+            // Make sure knife (carrysize 0) is shown
+            if (Weap.CarrySize == 0)
+                CurX += BlockSize;
 
-			LeftToDraw -= Weap.CarrySize;
-		}
-	}
+            LeftToDraw -= Weap.CarrySize;
+        }
+    }
 
-	// Draw remainging empty boxes
-	Canvas.DrawColor = WhiteColor;
-	if (LeftToDraw > 0)
-		DrawEmptyIcon(Canvas, LeftToDraw, sX + CurX, sY);
+    // Draw remainging empty boxes
+    Canvas.DrawColor = WhiteColor;
+    if (LeftToDraw > 0)
+        DrawEmptyIcon(Canvas, LeftToDraw, sX + CurX, sY);
 }
 
 defaultproperties
