@@ -7,11 +7,11 @@ class MolotovProjectile extends Grenade1;
 // override explosion to spawn fire too
 simulated function Explosion(vector HitLocation, Rotator HitRotation)
 {
-	Spawn(class'MolotovFire', , , Location);
+	Spawn(class'MolotovFire', , , HitLocation);
 	Super.Explosion(HitLocation, HitRotation);
 }
 
 defaultproperties
 {
-    Damage=42.000000
+    Damage=43.0
 }

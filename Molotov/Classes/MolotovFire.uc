@@ -5,9 +5,10 @@
 class MolotovFire extends Actor;
 
 var float BurnDuration;
-var float DamagePerSecond;
-var float FireRadius;
+var float DamagePerTimer;
+var float DamageAccumulator;
 
+var float FireRadius;
 var float TimePassed;
 var float DamageTickTimer;
 
@@ -15,7 +16,7 @@ simulated function PostBeginPlay()
 {
 	Super.PostBeginPlay();
 
-	FireRadius = CollisionRadius * 2;
+    BurnDuration += FRand();
 	TimePassed = 0.0;
 	DamageTickTimer = 0.0;
 
@@ -49,19 +50,26 @@ simulated function Tick(float DeltaTime)
 	}
 
 	// Destroy when burn time is over (randomized)
-	if (TimePassed >= BurnDuration + FRand())
+	if (TimePassed >= BurnDuration)
 		Destroy();
 }
 
 function Timer()
 {
-	local float DamageAmount;
+	local int DamageAmount;
 
-	// Calculate damage for this tick
-	DamageAmount = DamagePerSecond * 0.1;
+	// Add this tick's fractional damage to the pool
+	DamageAccumulator += DamagePerTimer;
 
-	// Damage nearby actors (pawns and vehicles)
-	DamageNearby(DamageAmount);
+	// Deal any actual damage for this tick
+	if (DamageAccumulator >= 1.0)
+	{
+		DamageAmount = int(DamageAccumulator);
+
+		// Damage nearby actors (pawns and vehicles)
+		DamageAccumulator -= DamageAmount;
+		DamageNearby(DamageAmount);
+	}
 }
 
 function DamageNearby(float Damage)
@@ -83,10 +91,13 @@ function DamageNearby(float Damage)
 defaultproperties
 {
 	BurnDuration=6.9
-	DamagePerSecond=20.0
+	DamagePerTimer=2.5
+	FireRadius=300.0
     DrawType=DT_None
-    CollisionRadius=150.000000
-    bCollideWorld=True
+    CollisionRadius=8.0
+	CollisionHeight=8.0
+	bCollideActors=true
+    bCollideWorld=true
     Physics=PHYS_Falling
     Mass=10.0
 }
