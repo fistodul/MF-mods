@@ -48,8 +48,8 @@ simulated function Tick(float DeltaTime)
 		DamageTickTimer = 0.0;
 	}
 
-	// Destroy when burn time is over
-	if (TimePassed >= BurnDuration)
+	// Destroy when burn time is over (randomized)
+	if (TimePassed >= BurnDuration + FRand())
 		Destroy();
 }
 
@@ -82,7 +82,7 @@ function DamageNearby(float Damage)
 
 defaultproperties
 {
-	BurnDuration=7.0
+	BurnDuration=6.9
 	DamagePerSecond=20.0
     DrawType=DT_None
     CollisionRadius=150.000000
