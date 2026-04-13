@@ -46,6 +46,7 @@ simulated function Tick(float DeltaTime)
 			);
 		}
 
+		PlaySound(Sound'MiscSFX.HitRubber',, 0.5,,, 2.0);
 		DamageTickTimer = 0.0;
 	}
 
