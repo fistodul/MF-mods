@@ -77,19 +77,102 @@ function Killed(pawn killer, pawn victim, name damageType)
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
 
-    if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team) {
-        if (Teams[victim.PlayerReplicationInfo.Team].Size <= 1) {
+    if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
+    {
+        if (Teams[victim.PlayerReplicationInfo.Team].Size <= 1)
+        {
             killer.PlayerReplicationInfo.Score += 5;
-            Teams[killer.PlayerReplicationInfo.Team].Score += 1;
-
-            if (Teams[killer.PlayerReplicationInfo.Team].Score >= FragLimit)
-                EndGame("fraglimit");
-
-            // Go to the round if the team is wiped out
+            RoundEnded(killer.PlayerReplicationInfo.Team);
         }
 
         ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
     }
+}
+
+function RoundEnded(int Winner)
+{
+    if (Winner == -1)
+    {
+        if (Teams[0].Size > Teams[1].Size)
+            Winner = 0;
+        else if (Teams[0].Size < Teams[1].Size)
+            Winner = 1;
+        else
+            Winner = Rand(2);
+    }
+
+    Teams[Winner].Score += 1;
+
+    if (Teams[Winner].Score >= FragLimit)
+        Super.EndGame("fraglimit");
+    else
+        RestartRound();
+}
+
+function RestartRound()
+{
+    local Pawn P;
+    local EnginePhysical Phys;
+    local Wheel W;
+    local TripBombOnGround T;
+
+    local TugPlayerReplicationInfo TPRI;
+    local TugBotRepInfo TBRI;
+
+    GameReplicationInfo.RemainingTime = TimeLimit * 60;
+    GameReplicationInfo.RemainingMinute = GameReplicationInfo.RemainingTime;
+
+    // Destroy vehicles, wheels and trip bombs
+    for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
+    {
+        if (Phys.IsA('Vehicle'))
+            Vehicle(Phys).SilentDestroy();
+    }
+
+    foreach AllActors(Class'Wheel', W)
+        W.Destroy();
+
+    foreach AllActors(Class'TripBombOnGround', T)
+        T.Destroy();
+
+    // Reset players to initial teams and respawn
+    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    {
+        if (P.PlayerReplicationInfo != None && !P.IsA('Spectator'))
+        {
+            // Reset team to initial
+            TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
+            TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
+
+            if (TPRI != None && TPRI.InitialTeam != P.PlayerReplicationInfo.Team)
+                ChangeTeam(P, TPRI.InitialTeam);
+            else if (TBRI != None && TBRI.InitialTeam != P.PlayerReplicationInfo.Team)
+                ChangeTeam(P, TBRI.InitialTeam);
+
+            // Discard inventory and respawn
+            DiscardInventory(P);
+            P.GotoState('PlayerWalking');
+            RestartPlayer(P);
+        }
+    }
+}
+
+function EndGame(string Reason)
+{
+    if (Reason == "timelimit")
+        RoundEnded(-1);
+    else 
+        Super.EndGame(Reason);
+}
+
+event Logout(Pawn Exiting)
+{
+    Super.Logout(Exiting);
+
+    if (Teams[0].Size == 0 && Teams[1].Size > 0)
+        RoundEnded(1);
+    else if (Teams[1].Size == 0 && Teams[0].Size > 0)
+        RoundEnded(0);
 }
 
 // Return true if candidate is close to friendly players and far from enemies
@@ -149,31 +232,6 @@ function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional 
     return Super.FindPlayerStart(P, InTeam, incomingName);
 }
 
-/*function EndGame(string Reason)
-{
-    local int Biggest;
-
-    if (Reason == "timelimit") {
-        if (Teams[0].Size > Teams[1].Size)
-            Biggest = 0;
-        else if (Teams[0].Size < Teams[1].Size)
-            Biggest = 1;
-        else
-            Biggest = Rand(2);
-
-            Teams[Biggest].Score += 1;
-            //if (Teams[Biggest].Score >= FragLimit)
-            //    EndGame("fraglimit");
-
-        TimeLimit = 9;
-        TugReplicationInfo(GameReplicationInfo).TimeLimit = TimeLimit;
-        TugReplicationInfo(GameReplicationInfo).RemainingTime = TimeLimit * 60;
-        return;
-    }
-
-    Super.EndGame(Reason);
-}*/
-
 event PlayerPawn Login
 (
     string Portal,
@@ -182,10 +240,13 @@ event PlayerPawn Login
     class<PlayerPawn> SpawnClass
 )
 {
-    if (bKillTransform)
-        SpawnClass = Class'TugPlayer';
+    local PlayerPawn P;
+    P = Super.Login(Portal, Options, Error, Class'TugPlayer');
 
-    return Super.Login(Portal, Options, Error, SpawnClass);
+    if (P != None && P.PlayerReplicationInfo != None)
+        TugPlayerReplicationInfo(P.PlayerReplicationInfo).InitialTeam = P.PlayerReplicationInfo.Team;
+
+    return P;
 }
 
 defaultproperties

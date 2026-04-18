@@ -21,4 +21,5 @@ function Died(pawn Killer, name damageType, vector HitLocation)
 defaultproperties
 {
     bGoodDriver=True
+    PlayerReplicationInfoClass=Class'TugBotRepInfo'
 }

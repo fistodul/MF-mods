@@ -24,6 +24,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
 
 defaultproperties
 {
+    PlayerReplicationInfoClass=Class'TugPlayerReplicationInfo'
     Footstep1=Sound'RagePlayerSounds.(All).stone01'
     Footstep2=Sound'RagePlayerSounds.(All).stone02'
     Footstep3=Sound'RagePlayerSounds.(All).stone03'

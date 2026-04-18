@@ -50,4 +50,5 @@ defaultproperties
 {
     bGoodDriver=True
     PreferedTeam=0
+    PlayerReplicationInfoClass=Class'ZombieBotRepInfo'
 }

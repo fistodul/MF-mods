@@ -321,17 +321,98 @@ function Killed(pawn killer, pawn victim, name damageType)
             if (Teams[0].Size <= 1)
             {
                 killer.PlayerReplicationInfo.Score += 5;
-                Teams[1].Score += 1;
-
-                if (Teams[1].Score >= FragLimit)
-                    EndGame("fraglimit");
-
-                // Go to the next round if the team is wiped out
+                RoundEnded(1);
             }
 
             ChangeTeam(victim, 1);
         }
     }
+}
+
+function RoundEnded(int Winner)
+{
+    if (Winner == -1)
+    {
+        if (Teams[0].Size > 0)
+            Winner = 0;
+        else
+            Winner = 1;
+    }
+
+    Teams[Winner].Score += 1;
+
+    if (Teams[Winner].Score >= FragLimit)
+        Super.EndGame("fraglimit");
+    else
+        RestartRound();
+}
+
+function RestartRound()
+{
+    local Pawn P;
+    local EnginePhysical Phys;
+    local Vehicle V;
+    local Wheel W;
+    local TripBombOnGround T;
+
+    local ZombiePlayerReplicationInfo ZPRI;
+    local ZombieBotRepInfo ZBRI;
+
+    GameReplicationInfo.RemainingTime = TimeLimit * 60;
+    GameReplicationInfo.RemainingMinute = GameReplicationInfo.RemainingTime;
+
+    // Destroy vehicles, wheels and trip bombs
+    for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
+    {
+        V = Vehicle(Phys);
+        if (V != None)
+            V.SilentDestroy();
+    }
+
+    foreach AllActors(Class'Wheel', W)
+        W.Destroy();
+
+    foreach AllActors(Class'TripBombOnGround', T)
+        T.Destroy();
+
+    // Reset all players to humans (initial team 0) and respawn
+    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    {
+        if (P.PlayerReplicationInfo != None && !P.IsA('Spectator'))
+        {
+            // Reset to initial team (humans)
+            ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
+            ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
+
+            if (ZPRI != None && ZPRI.InitialTeam != P.PlayerReplicationInfo.Team)
+                ChangeTeam(P, ZPRI.InitialTeam);
+            else if (ZBRI != None && ZBRI.InitialTeam != P.PlayerReplicationInfo.Team)
+                ChangeTeam(P, ZBRI.InitialTeam);
+
+            // Discard inventory and respawn
+            DiscardInventory(P);
+            P.GotoState('PlayerWalking');
+            RestartPlayer(P);
+        }
+    }
+}
+
+function EndGame(string Reason)
+{
+    if (Reason == "timelimit")
+        RoundEnded(-1);
+    else
+        Super.EndGame(Reason);
+}
+
+event Logout(Pawn Exiting)
+{
+    Super.Logout(Exiting);
+
+    if (Teams[0].Size == 0 && Teams[1].Size > 0)
+        RoundEnded(1);
+    else if (Teams[1].Size == 0 && Teams[0].Size > 0)
+        RoundEnded(0);
 }
 
 // Applies buffs based on the game state at the time of respawn
@@ -443,10 +524,14 @@ event PlayerPawn Login
     local PlayerPawn P;
     P = Super.Login(Portal, Options, Error, Class'ZombiePlayer');
 
-    if (P != None && P.PlayerReplicationInfo.Team == 1)
-        P.PlayerRestartState = 'PlayerWalking';
+    if (P != None && P.PlayerReplicationInfo != None)
+    {
+        ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).InitialTeam = P.PlayerReplicationInfo.Team;
 
-    //RestartPlayer(P);
+        if (P.PlayerReplicationInfo.Team == 1)
+            P.PlayerRestartState = 'PlayerWalking';
+    }
+
     return P;
 }
 
