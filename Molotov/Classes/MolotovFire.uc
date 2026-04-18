@@ -76,17 +76,10 @@ function Timer()
 function DamageNearby(float Damage)
 {
     local Actor A;
-    local float Distance;
 
-    ForEach RadiusActors(class'Actor', A, FireRadius, Location)
-    {
-        // All actors with a TakeDamage implementation (includes vehicles)
-        Distance = VSize(A.Location - Location);
-
-        // Damage falls off with distance
-        if (Distance < FireRadius)
-            A.TakeDamage(Damage, Instigator, Location, vect(0,0,0), 'Exploded');
-    }
+    // All actors with a TakeDamage implementation (includes vehicles)
+    foreach RadiusActors(class'Actor', A, FireRadius, Location)
+        A.TakeDamage(Damage, Instigator, Location, vect(0,0,0), 'Exploded');
 }
 
 defaultproperties
