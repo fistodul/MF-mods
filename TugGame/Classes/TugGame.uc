@@ -113,6 +113,7 @@ function RestartRound()
 {
     local Pawn P;
     local EnginePhysical Phys;
+    local Vehicle V;
     local Wheel W;
     local TripBombOnGround T;
 
@@ -125,8 +126,9 @@ function RestartRound()
     // Destroy vehicles, wheels and trip bombs
     for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
     {
-        if (Phys.IsA('Vehicle'))
-            Vehicle(Phys).SilentDestroy();
+        V = Vehicle(Phys);
+        if (V != None)
+            V.SilentDestroy();
     }
 
     foreach AllActors(Class'Wheel', W)

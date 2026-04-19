@@ -37,6 +37,8 @@ function bool IsMeleeItem(Inventory Inv)
 function BecomeHuman(Pawn P)
 {
     local ZombiePlayer ZP;
+    local ZombieBotBase ZB;
+
     ZP = ZombiePlayer(P);
 
     if (ZP != None)
@@ -46,8 +48,9 @@ function BecomeHuman(Pawn P)
     }
     else
     {
-        if (P.IsA('ZombieBotBase'))
-            ZombieBotBase(P).MaxHealth = P.Default.Health;
+        ZB = ZombieBotBase(P);
+        if (ZB != None)
+            ZB.MaxHealth = P.Default.Health;
 
         P.MaxCarry = P.Default.MaxCarry;
     }
@@ -74,6 +77,7 @@ function BecomeHuman(Pawn P)
 function BecomeZombie(Pawn P)
 {
     local ZombiePlayer ZP;
+    local ZombieBotBase ZB;
     local float boost;
     local int MaxHealth;
 
@@ -94,8 +98,9 @@ function BecomeZombie(Pawn P)
     }
     else
     {
-        if (P.IsA('ZombieBotBase'))
-            ZombieBotBase(P).MaxHealth = MaxHealth;
+        ZB = ZombieBotBase(P);
+        if (ZB != None)
+            ZB.MaxHealth = MaxHealth;
 
         P.MaxCarry = P.Default.MaxCarry - 2;
     }
@@ -258,10 +263,9 @@ function PostBeginPlay()
     // collect PlayerStart actors with TeamNumber == 255 and detonation keys for zombies
     for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
-        if (NP.IsA('PlayerStart'))
+        PS = PlayerStart(NP);
+        if (PS != None)
         {
-            PS = PlayerStart(NP);
-
             if (PS.TeamNumber == 255)
             {
                 if (IsSpawnFarEnough(PS, 0) && IsSpawnFarEnough(PS, 1))
@@ -290,6 +294,9 @@ function PostBeginPlay()
 
 function Killed(pawn killer, pawn victim, name damageType)
 {
+    local ZombiePlayer ZP;
+    local ZombieBotBase ZB;
+
     local float UnitsAway;
     local int HealthBoost;
     local int MaxHealth;
@@ -305,10 +312,13 @@ function Killed(pawn killer, pawn victim, name damageType)
             UnitsAway = VSize(killer.Location - victim.Location) / MeleeDistance;
             HealthBoost = 30 * FMax(1.0 - UnitsAway, 0.0) + 0.5;
 
-            if (killer.IsA('ZombiePlayer'))
-                MaxHealth = ZombiePlayer(killer).MaxHealth;
-            else if (killer.IsA('ZombieBotBase'))
-                MaxHealth = ZombieBotBase(killer).MaxHealth;
+            ZP = ZombiePlayer(killer);
+            ZB = ZombieBotBase(killer);
+
+            if (ZP != None)
+                MaxHealth = ZP.MaxHealth;
+            else if (ZB != None)
+                MaxHealth = ZB.MaxHealth;
             else
                 MaxHealth = killer.Default.Health;
 

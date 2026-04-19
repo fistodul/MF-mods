@@ -36,8 +36,8 @@ simulated function Tick(float DeltaTime)
         for (i = 0; i < 3; i++)
         {
             Level.Particles.AddOne(
-                Location + VRand() * vect(110,110,0), 
-                vect(0,0,0),
+                Location + VRand() * vect(110, 110, 0), 
+                vect(0, 0, 0),
                 Texture'RageEffects.OldFire.OldFire_A01',
                 255,
                 1.5,
@@ -87,7 +87,7 @@ function DamageNearby(float Damage)
 
         // Vehicles seem to be hit farther without Dist checking
         if (Dist <= FireRadius && VerticalDist <= FireRadius * 0.5)
-            A.TakeDamage(Damage, Instigator, Location, vect(0,0,0), 'Exploded');
+            A.TakeDamage(Damage, Instigator, Location, vect(0, 0, 0), 'Exploded');
     }
 }
 
