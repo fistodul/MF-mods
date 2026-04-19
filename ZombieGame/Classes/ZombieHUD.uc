@@ -133,7 +133,7 @@ simulated function DrawGameSpecificStuff(canvas Canvas)
     DrawScoreBar(Canvas, sX, sY, BlockSize * 2, BlockSize * 0.5, 2, 2, Countdown, 0, false);
 }
 
-simulated function DrawInventory ( canvas Canvas, int sX, int sY )
+simulated function DrawInventory(canvas Canvas, int sX, int sY)
 {
     local RageWeapon Weap;
     local RageWeapon WeapT;
