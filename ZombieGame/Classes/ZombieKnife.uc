@@ -2,7 +2,7 @@ class ZombieKnife extends RageKnife;
 
 var int SlashDamage; // damage applied for melee slash
 
-function AltFire( float Value )
+function AltFire(float Value)
 {
     FireBeginTime = Level.TimeSeconds;
     if (bKnifeThrown != true && Pawn(owner) != None && Pawn(owner).CanFire())
@@ -18,7 +18,7 @@ function AltFire( float Value )
 
 state AltFiring
 {
-    function Tick (float Delta)
+    function Tick(float Delta)
     {
         // Charge up throwing power
         ThrowPower += Delta * 2;
@@ -59,7 +59,7 @@ function Slash()
     LastHit = None;
 }
 
-function ThrowKnife ()
+function ThrowKnife()
 {
     local vector X, Y, Z;
     local ZombieKnife_Thrown TKnife; // Thrown knife kept track of so it can be collected

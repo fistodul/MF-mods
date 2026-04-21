@@ -67,7 +67,7 @@ function Timer()
     {
         DamageAmount = int(DamageAccumulator);
 
-        // Damage nearby actors (pawns and vehicles)
+        // Damage nearby actors (e.g pawns and vehicles)
         DamageAccumulator -= DamageAmount;
         DamageNearby(DamageAmount);
     }
@@ -79,7 +79,7 @@ function DamageNearby(float Damage)
     local float Dist;
     local float VerticalDist;
 
-    // All actors with a TakeDamage implementation (includes vehicles, safes, etc.)
+    // All actors with a TakeDamage implementation
     foreach RadiusActors(class'Actor', A, FireRadius, Location)
     {
         Dist = VSize(A.Location - Location);

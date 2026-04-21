@@ -79,7 +79,6 @@ function BecomeZombie(Pawn P)
     local ZombiePlayer ZP;
     local ZombieBotBase ZB;
     local float boost;
-    local int MaxHealth;
 
     ZP = ZombiePlayer(P);
     boost = FClamp(
@@ -88,19 +87,18 @@ function BecomeZombie(Pawn P)
     );
 
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.55 * boost;
-    MaxHealth = P.Default.Health * 3.3 * boost;
-    P.Health = MaxHealth;
+    P.Health = P.Default.Health * 3.3 * boost;
 
     if (ZP != None)
     {
-        ZP.MaxHealth = MaxHealth;
+        ZP.MaxHealth = P.Health;
         ZP.MaxCarry = P.Default.MaxCarry - 2;
     }
     else
     {
         ZB = ZombieBotBase(P);
         if (ZB != None)
-            ZB.MaxHealth = MaxHealth;
+            ZB.MaxHealth = P.Health;
 
         P.MaxCarry = P.Default.MaxCarry - 2;
     }
@@ -261,7 +259,7 @@ function PostBeginPlay()
     NumZombieSpawns = 0;
 
     // collect PlayerStart actors with TeamNumber == 255 and detonation keys for zombies
-    for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
+    for (NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
     {
         PS = PlayerStart(NP);
         if (PS != None)
@@ -284,7 +282,7 @@ function PostBeginPlay()
     // if nothing's found, fallback to any PlayerStart (defensive)
     if (NumZombieSpawns == 0)
     {
-        for(NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
+        for (NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
         {
             if (NP.IsA('PlayerStart'))
                 AddZombieSpawn(NP);
