@@ -7,3 +7,8 @@ replication
     reliable if (Role == ROLE_Authority)
         InitialTeam;
 }
+
+defaultproperties
+{
+    InitialTeam=255
+}

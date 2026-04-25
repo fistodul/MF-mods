@@ -1,7 +1,7 @@
 //=============================================================================
 // TugGame by Animeman - 2025, includes derivatives of Player & ReplicationInfo
 //=============================================================================
-class TugGame extends RageTeamGame config;
+class TugGame extends RageTeamGame;
 
 var config bool bSpawnAnywhere; // Don't spawn just from your base
 var config bool bKillTransform; // Instead of respawning, instantly turn into the other team
@@ -42,6 +42,32 @@ function AddRedSpawn(NavigationPoint NP)
         return;
 
     RedSpawns[NumRedSpawns++] = NP;
+}
+
+// Fix for bots not having a team at login or whatever...
+function bool ChangeTeam(Pawn P, int num)
+{
+    local TugPlayerReplicationInfo TPRI;
+    local TugBotRepInfo TBRI;
+
+    // Let parent do its book-keeping first (teamcounts etc).
+    if (Super.ChangeTeam(P, num))
+    {
+        if (P.PlayerReplicationInfo != None)
+        {
+            TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
+            TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
+
+            if (TPRI != None && TPRI.InitialTeam == 255)
+                TPRI.InitialTeam = P.PlayerReplicationInfo.Team;
+            else if (TBRI != None && TBRI.InitialTeam == 255)
+                TBRI.InitialTeam = P.PlayerReplicationInfo.Team;
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 simulated function PreBeginPlay()
@@ -114,14 +140,14 @@ function RestartRound()
     local Pawn P;
     local EnginePhysical Phys;
     local Vehicle V;
-    local Wheel W;
     local TripBombOnGround T;
 
     local TugPlayerReplicationInfo TPRI;
     local TugBotRepInfo TBRI;
 
-    GameReplicationInfo.RemainingTime = TimeLimit * 60;
-    GameReplicationInfo.RemainingMinute = GameReplicationInfo.RemainingTime;
+    RemainingTime = TimeLimit * 60;
+    GameReplicationInfo.RemainingTime = RemainingTime;
+    GameReplicationInfo.RemainingMinute = RemainingTime;
 
     // Destroy vehicles, wheels and trip bombs
     for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
@@ -130,9 +156,6 @@ function RestartRound()
         if (V != None)
             V.SilentDestroy();
     }
-
-    foreach AllActors(Class'Wheel', W)
-        W.Destroy();
 
     foreach AllActors(Class'TripBombOnGround', T)
         T.Destroy();
@@ -151,9 +174,15 @@ function RestartRound()
             else if (TBRI != None && TBRI.InitialTeam != P.PlayerReplicationInfo.Team)
                 ChangeTeam(P, TBRI.InitialTeam);
 
-            // Discard inventory and respawn
-            DiscardInventory(P);
-            P.GotoState('PlayerWalking');
+            // Reset inventory and respawn
+            if (P.IsA('PlayerPawn'))
+            {
+                DiscardInventory(P);
+                P.GotoState('PlayerWalking');
+            }
+            else
+                TugBotBase(P).addLoadoutInventory();
+
             RestartPlayer(P);
         }
     }

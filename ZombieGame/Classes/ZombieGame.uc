@@ -1,7 +1,7 @@
 //=============================================================================
 // ZombieGame by Animeman - 2025, includes derivatives of Player, HUD, Knife...
 //=============================================================================
-class ZombieGame extends RageTeamGame config;
+class ZombieGame extends RageTeamGame;
 
 // Exponent influencing zombie strength, recommended values: 0.16 - 0.2
 var config float Z_BiasExp;
@@ -31,6 +31,18 @@ function bool IsMeleeItem(Inventory Inv)
     }
 
     return false;
+}
+
+function test(Pawn P)
+{
+    P.clientMessage("Time1: " $ GameReplicationInfo.RemainingTime);
+    P.clientMessage("Minute1: " $ GameReplicationInfo.RemainingMinute);
+
+    RemainingTime = TimeLimit * 60;
+    GameReplicationInfo.RemainingTime = RemainingTime;
+    P.clientMessage("Time2: " $ GameReplicationInfo.RemainingTime);
+    GameReplicationInfo.RemainingMinute = RemainingTime;
+    P.clientMessage("Minute2: " $ GameReplicationInfo.RemainingMinute);
 }
 
 // Detroit
@@ -212,12 +224,26 @@ function AddZombieSpawn(NavigationPoint NP)
 // SetPhysics(PHYS_Flying);
 // SetPhysics(PHYS_None);
 
+// Fix for bots not having a team in RestartPlayer...
 function bool ChangeTeam(Pawn P, int num)
 {
+    local ZombiePlayerReplicationInfo ZPRI;
+    local ZombieBotRepInfo ZBRI;
+
     // Let parent do its book-keeping first (teamcounts etc).
     if (Super.ChangeTeam(P, num))
     {
-        // Fix for bots not having a team in RestartPlayer...
+        if (P.PlayerReplicationInfo != None)
+        {
+            ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
+            ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
+
+            if (ZPRI != None && ZPRI.InitialTeam == 255)
+                ZPRI.InitialTeam = P.PlayerReplicationInfo.Team;
+            else if (ZBRI != None && ZBRI.InitialTeam == 255)
+                ZBRI.InitialTeam = P.PlayerReplicationInfo.Team;
+        }
+
         if (num == 1)
             BecomeZombie(P);
         else
@@ -232,7 +258,6 @@ function bool ChangeTeam(Pawn P, int num)
 simulated function PreBeginPlay()
 {
     local ZombieReplicationInfo ZRI;
-    Super.PreBeginPlay();
 
     if (bZombieInfect)
     {
@@ -242,7 +267,9 @@ simulated function PreBeginPlay()
     else
         FragLimit = 30;
 
+    Super.PreBeginPlay();
     ZRI = ZombieReplicationInfo(GameReplicationInfo);
+
     ZRI.bZombieInfect = bZombieInfect;
     ZRI.bKillTransform = bKillTransform;
     ZRI.zombieWeapons = zombieWeapons;
@@ -360,14 +387,14 @@ function RestartRound()
     local Pawn P;
     local EnginePhysical Phys;
     local Vehicle V;
-    local Wheel W;
     local TripBombOnGround T;
 
     local ZombiePlayerReplicationInfo ZPRI;
     local ZombieBotRepInfo ZBRI;
 
-    GameReplicationInfo.RemainingTime = TimeLimit * 60;
-    GameReplicationInfo.RemainingMinute = GameReplicationInfo.RemainingTime;
+    RemainingTime = TimeLimit * 60;
+    GameReplicationInfo.RemainingTime = RemainingTime;
+    GameReplicationInfo.RemainingMinute = RemainingTime;
 
     // Destroy vehicles, wheels and trip bombs
     for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
@@ -376,9 +403,6 @@ function RestartRound()
         if (V != None)
             V.SilentDestroy();
     }
-
-    foreach AllActors(Class'Wheel', W)
-        W.Destroy();
 
     foreach AllActors(Class'TripBombOnGround', T)
         T.Destroy();
@@ -397,9 +421,15 @@ function RestartRound()
             else if (ZBRI != None && ZBRI.InitialTeam != P.PlayerReplicationInfo.Team)
                 ChangeTeam(P, ZBRI.InitialTeam);
 
-            // Discard inventory and respawn
-            DiscardInventory(P);
-            P.GotoState('PlayerWalking');
+            // Reset inventory and respawn
+            if (P.IsA('PlayerPawn'))
+            {
+                DiscardInventory(P);
+                P.GotoState('PlayerWalking');
+            }
+            else
+                ZombieBotBase(P).addLoadoutInventory();
+
             RestartPlayer(P);
         }
     }
