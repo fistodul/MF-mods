@@ -24,6 +24,69 @@ function ZombieGame GetZombieGame()
     return ZG;
 }
 
+function String UntilSpace(string s)
+{
+    local int SpacePosition;
+    SpacePosition = InStr(s, " ");
+
+    if (SpacePosition != -1)
+        Return Left(s, SpacePosition);
+
+    Return s;
+}
+
+function Pawn GetPawn(string PlayerName)
+{
+    local Pawn P;
+    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    {
+        if (P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.PlayerName == PlayerName)
+            return P;
+    }
+
+    return None;
+}
+
+exec function RunAs(string command)
+{
+    local string PlayerName;
+    local Pawn P;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    PlayerName = UntilSpace(command);
+    P = GetPawn(PlayerName);
+
+    if (P != None)
+    {
+        command = Mid(command, Len(PlayerName) + 1);
+        P.ConsoleCommand(command);
+    }
+}
+
+exec function SetTo(string command)
+{
+    local string temp;
+    local Pawn P;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    temp = UntilSpace(command);
+    P = GetPawn(temp);
+
+    if (P != None)
+    {
+        command = Mid(command, Len(temp) + 1);
+        temp = UntilSpace(command);
+        command = Mid(command, Len(temp) + 1);
+
+        // temp becomes the property and command the value
+        P.SetPropertyText(temp, command);
+    }
+}
+
 exec function BecomeHuman()
 {
     if (!bAdmin && (Level.Netmode != NM_Standalone))
