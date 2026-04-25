@@ -7,7 +7,7 @@ var byte MaxCarry;
 replication
 {
     reliable if (Role < ROLE_Authority)
-        BecomeHuman, BecomeZombie;
+        BecomeHuman, BecomeZombie, RunAs, SetTo, Teleport;
     reliable if (Role == ROLE_Authority)
         MaxHealth, MaxCarry;
 }
