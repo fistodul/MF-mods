@@ -87,6 +87,26 @@ exec function SetTo(string command)
     }
 }
 
+exec function Teleport(string PlayerName)
+{
+    local Pawn P;
+    local int tries;
+
+    if (!bAdmin && (Level.Netmode != NM_Standalone))
+        return;
+
+    P = GetPawn(PlayerName);
+    if (P != None)
+    {
+        // attempt a few random picks
+        for (tries = 0; tries < 9; tries++)
+        {
+            if (SetLocation(P.Location + VRand() * vect(100, 100, 10)))
+                break;
+        }
+    }
+}
+
 exec function BecomeHuman()
 {
     if (!bAdmin && (Level.Netmode != NM_Standalone))
