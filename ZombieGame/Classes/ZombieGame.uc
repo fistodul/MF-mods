@@ -99,7 +99,7 @@ function BecomeZombie(Pawn P)
     );
 
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.55 * boost;
-    P.Health = P.Default.Health * 3.3 * boost;
+    P.Health = P.Default.Health * 3.33 * boost;
 
     if (ZP != None)
     {
@@ -116,7 +116,7 @@ function BecomeZombie(Pawn P)
     }
 
     P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
-    P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5;
+    P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5 * boost;
     P.JumpZ = P.Default.JumpZ * 1.45 * boost;
 
     P.GroundSpeed = P.BaseGroundSpeed - 80;
