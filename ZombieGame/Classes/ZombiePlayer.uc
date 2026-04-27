@@ -7,7 +7,7 @@ var byte MaxCarry;
 replication
 {
     reliable if (Role < ROLE_Authority)
-        BecomeHuman, BecomeZombie, RunAs, SetTo, Teleport;
+        BecomeHuman, BecomeZombie, RunAs, SetTo, SetToLooking, GetTo, GetToLooking, Teleport;
     reliable if (Role == ROLE_Authority)
         MaxHealth, MaxCarry;
 }
@@ -40,7 +40,7 @@ function Pawn GetPawn(string PlayerName)
     local Pawn P;
     for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
-        if (P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.PlayerName == PlayerName)
+        if (P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.PlayerName ~= PlayerName)
             return P;
     }
 
@@ -87,6 +87,24 @@ exec function SetTo(string command)
     }
 }
 
+exec function GetTo(string command)
+{
+    local string property;
+    local Pawn P;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    property = UntilSpace(command);
+    P = GetPawn(property);
+
+    if (P != None)
+    {
+        command = Mid(command, Len(property) + 1);
+        ClientMessage(P.GetPropertyText(command));
+    }
+}
+
 exec function SetToLooking(string command)
 {
     local string property;
@@ -100,10 +118,23 @@ exec function SetToLooking(string command)
     if (A != None)
     {
         property = UntilSpace(command);
-        command = Mid(command, Len(temp) + 1);
+        command = Mid(command, Len(property) + 1);
 
         A.SetPropertyText(property, command);
     }
+}
+
+exec function GetToLooking(string command)
+{
+    local vector HitLocation, HitNormal;
+    local Actor A;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    A = Trace(HitLocation, HitNormal, Location + Vector(Rotation) * 10000, Location);
+    if (A != None)
+        ClientMessage(A.GetPropertyText(command));
 }
 
 exec function Teleport(string PlayerName)

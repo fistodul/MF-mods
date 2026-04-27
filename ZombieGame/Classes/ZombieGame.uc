@@ -33,18 +33,6 @@ function bool IsMeleeItem(Inventory Inv)
     return false;
 }
 
-function test(Pawn P)
-{
-    P.clientMessage("Time1: " $ GameReplicationInfo.RemainingTime);
-    P.clientMessage("Minute1: " $ GameReplicationInfo.RemainingMinute);
-
-    RemainingTime = TimeLimit * 60;
-    GameReplicationInfo.RemainingTime = RemainingTime;
-    P.clientMessage("Time2: " $ GameReplicationInfo.RemainingTime);
-    GameReplicationInfo.RemainingMinute = RemainingTime;
-    P.clientMessage("Minute2: " $ GameReplicationInfo.RemainingMinute);
-}
-
 // Detroit
 function BecomeHuman(Pawn P)
 {
