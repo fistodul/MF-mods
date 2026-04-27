@@ -87,6 +87,25 @@ exec function SetTo(string command)
     }
 }
 
+exec function SetToLooking(string command)
+{
+    local string property;
+    local vector HitLocation, HitNormal;
+    local Actor A;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    A = Trace(HitLocation, HitNormal, Location + Vector(Rotation) * 10000, Location);
+    if (A != None)
+    {
+        property = UntilSpace(command);
+        command = Mid(command, Len(temp) + 1);
+
+        A.SetPropertyText(property, command);
+    }
+}
+
 exec function Teleport(string PlayerName)
 {
     local Pawn P;
