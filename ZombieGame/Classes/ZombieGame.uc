@@ -83,6 +83,8 @@ function BecomeHuman(Pawn P)
     P.MaxStepHeight = P.Default.MaxStepHeight;
     //P.AirControl = P.Default.AirControl;
     //P.LadderSpeed = P.Default.LadderSpeed;
+
+    TransformToHumanItems(P);
 }
 
 // Buff physical prowess based on scaled defaults
@@ -129,7 +131,7 @@ function BecomeZombie(Pawn P)
     //P.AirControl = P.Default.AirControl * 1.75;
     //P.LadderSpeed = P.Default.LadderSpeed * 1.5;
 
-    TransformItems(P);
+    TransformToZombieItems(P);
     if (zombieWeapons < 2)
         StripRanged(P);
 
@@ -147,8 +149,29 @@ function TransformItem(Inventory Inv, string NewInv)
     GiveWeapon(P, NewInv);
 }
 
+// Give Human equivalents to Zombie items
+function TransformToHumanItems(Pawn P)
+{
+    local Inventory inv; // Inv.Next
+    for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
+    {
+        switch (Inv.Class)
+        {
+            case Class'ZombieKnife':
+                TransformItem(Inv, "RageGame.RageKnife");
+                break;
+            case Class'ZombieShot':
+                TransformItem(Inv, "RageGame.AdrenalineShot");
+                break;
+            case Class'ZombieArmour':
+                TransformItem(Inv, "RageGame.RageArmour");
+                break;
+        }
+    }
+}
+
 // Give Zombie equivalents to Human items
-function TransformItems(Pawn P)
+function TransformToZombieItems(Pawn P)
 {
     local Inventory inv; // Inv.Next
     for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
