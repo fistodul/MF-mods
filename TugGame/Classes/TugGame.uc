@@ -269,8 +269,7 @@ event PlayerPawn Login
     string Options,
     out string Error,
     class<PlayerPawn> SpawnClass
-)
-{
+) {
     local PlayerPawn P;
     P = Super.Login(Portal, Options, Error, Class'TugPlayer');
 

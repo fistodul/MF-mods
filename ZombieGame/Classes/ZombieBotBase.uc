@@ -36,8 +36,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         ZG != None && ZG.bZombieInfect && ZG.bKillTransform &&
         Killer != None && Killer.PlayerReplicationInfo != None &&
         PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
-    )
-    {
+    ) {
         Health = MaxHealth;
         ZG.Killed(Killer, self, damageType);
         return;

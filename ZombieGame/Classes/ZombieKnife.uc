@@ -49,7 +49,7 @@ function Slash()
     EndTrace = Owner.Location + (Range * vector(AdjustedAim));
     Other = Pawn(Owner).TraceShot(HitLocation, HitNormal, EndTrace, Start);
 
-    if ((Other == None) || (Other == Owner) || (Other == self))
+    if (Other == None || Other == Owner || Other == self)
         return;
 
     if (PlayerPawn(Owner) != None)

@@ -30,9 +30,9 @@ function String UntilSpace(string s)
     SpacePosition = InStr(s, " ");
 
     if (SpacePosition != -1)
-        Return Left(s, SpacePosition);
+        return Left(s, SpacePosition);
 
-    Return s;
+    return s;
 }
 
 function Pawn GetPawn(string PlayerName)
@@ -180,8 +180,8 @@ simulated function ETryLoadoutResult TryLoadoutZone()
 
     if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 3)
         return Super.TryLoadoutZone();
-    else
-        return Loadout_None;
+
+    return Loadout_None;
 }
 
 simulated function ETryLoadoutResult TryLoadoutCrate()
@@ -191,15 +191,17 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
 
     if (ZRI == None || PlayerReplicationInfo.Team != 1 || ZRI.zombieWeapons > 2)
         return Super.TryLoadoutCrate();
-    else
-        return Loadout_None;
+
+    return Loadout_None;
 }
 
-// Can't believe there wasn't one already there
-function GlobalTakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
+// Can't believe there wasn't a global one already
+function int TakeDamageModifier(int Damage, name damageType)
 {
     if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
         Damage /= 10;
+
+    return Damage;
 }
 
 function Died(pawn Killer, name damageType, vector HitLocation)
@@ -211,8 +213,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         ZRI != None && ZRI.bZombieInfect && ZRI.bKillTransform && Killer != None &&
         Killer != self && Killer.PlayerReplicationInfo != None &&
         PlayerReplicationInfo.Team != 1 && Killer.PlayerReplicationInfo.Team == 1
-    )
-    {
+    ) {
         Health = MaxHealth;
         GetZombieGame().Killed(Killer, self, damageType);
         return;
@@ -229,7 +230,7 @@ simulated function bool CanIPickup(Inventory Weap)
     if (Weap == none || (Weap.CarrySize + CurrentCarry) > MaxCarry)
         return false;
 
-    // Check how many of these i am allowed
+    // Check how many of these I am allowed
     for (Inv = Inventory; Inv != None; Inv = Inv.Inventory)
     {
         if (Inv.Class == Weap.Class)
@@ -246,7 +247,7 @@ state PlayerSwimming
 {
     function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
     {
-        GlobalTakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
+        Damage = TakeDamageModifier(Damage, damageType);
         Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
     }
 }
@@ -255,7 +256,7 @@ state PlayerWalking
 {
     function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
     {
-        GlobalTakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
+        Damage = TakeDamageModifier(Damage, damageType);
         Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
     }
 

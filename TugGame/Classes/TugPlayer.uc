@@ -12,8 +12,7 @@ function Died(pawn Killer, name damageType, vector HitLocation)
         TG != None && TRI.bKillTransform && Killer != None && 
         Killer.PlayerReplicationInfo != None &&
         PlayerReplicationInfo.Team != Killer.PlayerReplicationInfo.Team
-    )
-    {
+    ) {
         Health = Default.Health;
         TG.Killed(Killer, self, damageType);
         return;
