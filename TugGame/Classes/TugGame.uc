@@ -45,29 +45,24 @@ function AddRedSpawn(NavigationPoint NP)
 }
 
 // Fix for bots not having a team at login or whatever...
-function bool ChangeTeam(Pawn P, int num)
+function AddToTeam(int num, Pawn P)
 {
     local TugPlayerReplicationInfo TPRI;
     local TugBotRepInfo TBRI;
 
     // Let parent do its book-keeping first (teamcounts etc).
-    if (Super.ChangeTeam(P, num))
+    Super.AddToTeam(num, P);
+
+    if (P.PlayerReplicationInfo != None)
     {
-        if (P.PlayerReplicationInfo != None)
-        {
-            TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
-            TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
+        TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
+        TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
 
-            if (TPRI != None && TPRI.InitialTeam == 255)
-                TPRI.InitialTeam = P.PlayerReplicationInfo.Team;
-            else if (TBRI != None && TBRI.InitialTeam == 255)
-                TBRI.InitialTeam = P.PlayerReplicationInfo.Team;
-        }
-
-        return true;
+        if (TPRI != None && TPRI.InitialTeam == 255)
+            TPRI.InitialTeam = TPRI.Team;
+        else if (TBRI != None && TBRI.InitialTeam == 255)
+            TBRI.InitialTeam = TBRI.Team;
     }
-
-    return false;
 }
 
 simulated function PreBeginPlay()
@@ -97,7 +92,7 @@ function PostBeginPlay()
     }
 }
 
-// Move the killed player to the other team
+// Move the killed player to the other team before the round ends
 function Killed(pawn killer, pawn victim, name damageType)
 {
     // Call parent first to do normal death processing
@@ -105,13 +100,13 @@ function Killed(pawn killer, pawn victim, name damageType)
 
     if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
     {
+        ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
+
         if (Teams[victim.PlayerReplicationInfo.Team].Size <= 1)
         {
             killer.PlayerReplicationInfo.Score += 5;
             RoundEnded(killer.PlayerReplicationInfo.Team);
         }
-
-        ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
     }
 }
 
@@ -169,9 +164,9 @@ function RestartRound()
             TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
             TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
 
-            if (TPRI != None && TPRI.InitialTeam != P.PlayerReplicationInfo.Team)
+            if (TPRI != None && TPRI.InitialTeam != TPRI.Team)
                 ChangeTeam(P, TPRI.InitialTeam);
-            else if (TBRI != None && TBRI.InitialTeam != P.PlayerReplicationInfo.Team)
+            else if (TBRI != None && TBRI.InitialTeam != TBRI.Team)
                 ChangeTeam(P, TBRI.InitialTeam);
 
             // Reset inventory and respawn
@@ -313,7 +308,7 @@ defaultproperties
     FriendlyFireScale=0.0
     MaxTeamSize=32
     bBalanceTeams=false
-    bBalancing=true
+    bPlayersBalanceTeams=false
     MapPrefix="TG-"
     BeaconName="TG"
     DefaultPlayerClass=Class'TugPlayer'

@@ -85,7 +85,7 @@ function BecomeZombie(Pawn P)
     ZP = ZombiePlayer(P);
     boost = FClamp(
         ((Teams[0].Size + 0.5) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
-        1.0, 1.25
+        1.0, 1.253
     );
 
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed * 1.55 * boost;
@@ -236,34 +236,29 @@ function AddZombieSpawn(NavigationPoint NP)
 // SetPhysics(PHYS_None);
 
 // Fix for bots not having a team in RestartPlayer...
-function bool ChangeTeam(Pawn P, int num)
+function AddToTeam(int num, Pawn P)
 {
     local ZombiePlayerReplicationInfo ZPRI;
     local ZombieBotRepInfo ZBRI;
 
     // Let parent do its book-keeping first (teamcounts etc).
-    if (Super.ChangeTeam(P, num))
+    Super.AddToTeam(num, P);
+
+    if (P.PlayerReplicationInfo != None)
     {
-        if (P.PlayerReplicationInfo != None)
-        {
-            ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
-            ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
+        ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
+        ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
 
-            if (ZPRI != None && ZPRI.InitialTeam == 255)
-                ZPRI.InitialTeam = P.PlayerReplicationInfo.Team;
-            else if (ZBRI != None && ZBRI.InitialTeam == 255)
-                ZBRI.InitialTeam = P.PlayerReplicationInfo.Team;
-        }
-
-        if (num == 1)
-            BecomeZombie(P);
-        else
-            BecomeHuman(P);
-
-        return true;
+        if (ZPRI != None && ZPRI.InitialTeam == 255)
+            ZPRI.InitialTeam = ZPRI.Team;
+        else if (ZBRI != None && ZBRI.InitialTeam == 255)
+            ZBRI.InitialTeam = ZBRI.Team;
     }
 
-    return false;
+    if (num == 1)
+        BecomeZombie(P);
+    else
+        BecomeHuman(P);
 }
 
 simulated function PreBeginPlay()
@@ -361,16 +356,16 @@ function Killed(pawn killer, pawn victim, name damageType)
             killer.Health = Min(killer.Health + healthBoost, MaxHealth);
         }
 
-        // Move the infected to red
+        // Move the infected to red before the round ends
         if (bZombieInfect)
         {
-            if (Teams[0].Size <= 1)
+            ChangeTeam(victim, 1);
+
+            if (Teams[0].Size == 0)
             {
                 killer.PlayerReplicationInfo.Score += 5;
                 RoundEnded(1);
             }
-
-            ChangeTeam(victim, 1);
         }
     }
 }
@@ -427,9 +422,9 @@ function RestartRound()
             ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
             ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
 
-            if (ZPRI != None && ZPRI.InitialTeam != P.PlayerReplicationInfo.Team)
+            if (ZPRI != None && ZPRI.InitialTeam != ZPRI.Team)
                 ChangeTeam(P, ZPRI.InitialTeam);
-            else if (ZBRI != None && ZBRI.InitialTeam != P.PlayerReplicationInfo.Team)
+            else if (ZBRI != None && ZBRI.InitialTeam != ZBRI.Team)
                 ChangeTeam(P, ZBRI.InitialTeam);
 
             // Reset inventory and respawn
@@ -603,6 +598,15 @@ event PlayerPawn Login
     return P;
 }
 
+// Zombies fear no car...
+function int ReduceDamage(int Damage, name DamageType, pawn injured, pawn instigatedBy)
+{
+    if (DamageType == 'RunDown' && injured.PlayerReplicationInfo != None && injured.PlayerReplicationInfo.Team == 1)
+        Damage /= 10;
+
+    return Super.ReduceDamage(Damage, DamageType, injured, instigatedBy);
+}
+
 defaultproperties
 {
     Z_BiasExp=0.18
@@ -625,7 +629,7 @@ defaultproperties
     FriendlyFireScale=0.01
     MaxTeamSize=32
     bBalanceTeams=false
-    bBalancing=true
+    bPlayersBalanceTeams=false
     MapPrefix="ZM-"
     BeaconName="ZM"
     DefaultPlayerClass=Class'ZombiePlayer'

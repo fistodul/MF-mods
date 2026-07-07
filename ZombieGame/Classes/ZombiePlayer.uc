@@ -195,15 +195,6 @@ simulated function ETryLoadoutResult TryLoadoutCrate()
     return Loadout_None;
 }
 
-// Can't believe there wasn't a global one already
-function int TakeDamageModifier(int Damage, name damageType)
-{
-    if (damageType == 'RunDown' && PlayerReplicationInfo.Team == 1)
-        Damage /= 10;
-
-    return Damage;
-}
-
 function Died(pawn Killer, name damageType, vector HitLocation)
 {
     local ZombieReplicationInfo ZRI;
@@ -243,23 +234,8 @@ simulated function bool CanIPickup(Inventory Weap)
     return true;
 }
 
-state PlayerSwimming
-{
-    function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
-    {
-        Damage = TakeDamageModifier(Damage, damageType);
-        Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
-    }
-}
-
 state PlayerWalking
 {
-    function TakeDamage(int Damage, Pawn instigatedBy, Vector hitlocation, Vector momentum, name damageType)
-    {
-        Damage = TakeDamageModifier(Damage, damageType);
-        Super.TakeDamage(Damage, instigatedBy, hitlocation, momentum, damageType);
-    }
-
     exec function TryLoadout()
     {
         local ZombieReplicationInfo ZRI;
