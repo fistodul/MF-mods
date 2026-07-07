@@ -634,7 +634,7 @@ defaultproperties
     MeleeItems(1)=Class'ZombieShot'
     MeleeItems(0)=Class'ZombieArmour'
     GameName="Zombie Mode"
-    TimeLimit=9
+    TimeLimit=8
     StartUpTeamMessage="You are a"
     InstructionSound=Sound'RagePlayerVoice.Fire_At_Will'
     BotConfigType=Class'ZombieBotInfo'

@@ -304,7 +304,7 @@ defaultproperties
     BotConfigType=Class'TugBotInfo'
     bScoreTeamKills=false
     FragLimit=3
-    TimeLimit=9
+    TimeLimit=8
     FriendlyFireScale=0.0
     MaxTeamSize=32
     bBalanceTeams=false
