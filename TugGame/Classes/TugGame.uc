@@ -95,14 +95,17 @@ function PostBeginPlay()
 // Move the killed player to the other team before the round ends
 function Killed(pawn killer, pawn victim, name damageType)
 {
+    local int temp;
+
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
 
     if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
     {
+        temp = Teams[victim.PlayerReplicationInfo.Team].Size;
         ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
 
-        if (Teams[victim.PlayerReplicationInfo.Team].Size <= 1)
+        if (temp <= 1)
         {
             killer.PlayerReplicationInfo.Score += 5;
             RoundEnded(killer.PlayerReplicationInfo.Team);
