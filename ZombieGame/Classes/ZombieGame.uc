@@ -598,6 +598,20 @@ event PlayerPawn Login
     return P;
 }
 
+function pawn AddBot(optional byte Type)
+{
+    if (Type < 1)
+    {
+        // Passively try to maintain a ratio of 3 humans vs 1 zombie
+        if (Teams[0].Size < 3 * Max(Teams[1].Size, 1))
+            Type = 1;
+        else
+            Type = 2;
+    }
+
+    return Super.AddBot(Type);
+}
+
 // Zombies fear no car...
 function int ReduceDamage(int Damage, name DamageType, pawn injured, pawn instigatedBy)
 {
