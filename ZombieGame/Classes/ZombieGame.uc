@@ -4,7 +4,7 @@
 class ZombieGame extends RageTeamGame;
 
 // Exponent influencing zombie strength, recommended values: 0.16 - 0.2
-var config float Z_BiasExp;
+var config float zBiasExp;
 
 var config byte zombieWeapons; // Zombie weapon ability (0 - 4)
 var config bool bZombieLifeSteal; // Consume the flesh of the fallen to regenerate...
@@ -84,7 +84,7 @@ function BecomeZombie(Pawn P)
 
     ZP = ZombiePlayer(P);
     boost = FClamp(
-        ((Teams[0].Size + 0.5) / Max(Teams[1].Size, 1)) ** Z_BiasExp,
+        ((Teams[0].Size + 0.5) / Max(Teams[1].Size, 1)) ** zBiasExp,
         1.0, 1.253
     );
 
@@ -623,7 +623,7 @@ function int ReduceDamage(int Damage, name DamageType, pawn injured, pawn instig
 
 defaultproperties
 {
-    Z_BiasExp=0.18
+    zBiasExp=0.18
     zombieWeapons=1
     bZombieLifeSteal=true
     bSpawnAnywhere=true
