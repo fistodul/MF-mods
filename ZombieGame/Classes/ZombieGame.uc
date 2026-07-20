@@ -19,6 +19,7 @@ var int NumHumanSpawns;
 var int MeleeDistance;
 var NavigationPoint ZombieSpawns[50];
 var int NumZombieSpawns;
+var bool bPendingRestartRound;
 
 var class<Inventory> MeleeItems[3];
 function bool IsMeleeItem(Inventory Inv)
@@ -385,13 +386,23 @@ function RoundEnded(int Winner)
     if (Teams[Winner].Score >= FragLimit)
         Super.EndGame("fraglimit");
     else
+        bPendingRestartRound = true;
+}
+
+function Tick(float Delta)
+{
+    if (bPendingRestartRound)
+    {
+        bPendingRestartRound = false;
         RestartRound();
+    }
 }
 
 function RestartRound()
 {
     local Pawn P;
     local EnginePhysical Phys;
+    local EnginePhysical NextPhys;
     local Vehicle V;
     local TripBombOnGround T;
 
@@ -403,8 +414,9 @@ function RestartRound()
     GameReplicationInfo.RemainingMinute = RemainingTime;
 
     // Destroy vehicles, wheels and trip bombs
-    for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
+    for (Phys = Level.VehicleList; Phys != None; Phys = NextPhys)
     {
+        NextPhys = Phys.NextPhysical; // cache before SilentDestroy
         V = Vehicle(Phys);
         if (V != None)
             V.SilentDestroy();

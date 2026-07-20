@@ -5,7 +5,9 @@ class TugGame extends RageTeamGame;
 
 var config bool bSpawnAnywhere; // Don't spawn just from your base
 var config bool bKillTransform; // Instead of respawning, instantly turn into the other team
+
 var int MeleeDistance;
+var bool bPendingRestartRound;
 
 var NavigationPoint BlueSpawns[50];
 var int NumBlueSpawns;
@@ -130,13 +132,23 @@ function RoundEnded(int Winner)
     if (Teams[Winner].Score >= FragLimit)
         Super.EndGame("fraglimit");
     else
+        bPendingRestartRound = true;
+}
+
+function Tick(float Delta)
+{
+    if (bPendingRestartRound)
+    {
+        bPendingRestartRound = false;
         RestartRound();
+    }
 }
 
 function RestartRound()
 {
     local Pawn P;
     local EnginePhysical Phys;
+    local EnginePhysical NextPhys;
     local Vehicle V;
     local TripBombOnGround T;
 
@@ -148,8 +160,9 @@ function RestartRound()
     GameReplicationInfo.RemainingMinute = RemainingTime;
 
     // Destroy vehicles, wheels and trip bombs
-    for (Phys = Level.VehicleList; Phys != None; Phys = Phys.NextPhysical)
+    for (Phys = Level.VehicleList; Phys != None; Phys = NextPhys)
     {
+        NextPhys = Phys.NextPhysical; // cache before SilentDestroy
         V = Vehicle(Phys);
         if (V != None)
             V.SilentDestroy();
