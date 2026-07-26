@@ -336,7 +336,7 @@ function Killed(pawn killer, pawn victim, name damageType)
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
 
-    if (IsOnTeam(killer, 1) && !IsOnTeam(victim, 1))
+    if (killer != None && IsOnTeam(killer, 1) && !IsOnTeam(victim, 1))
     {
         // Let the zombie feast...
         if (bZombieLifeSteal)
@@ -366,7 +366,12 @@ function Killed(pawn killer, pawn victim, name damageType)
             {
                 killer.PlayerReplicationInfo.Score += 5;
                 RoundEnded(1);
+                return;
             }
+
+            // If the newly-switched victim is a bot, reset its AI
+            if (RageBot(victim) != None)
+                victim.GotoState('StartUp');
         }
     }
 }
@@ -401,6 +406,7 @@ function Tick(float Delta)
 function RestartRound()
 {
     local Pawn P;
+    local ZombieBotBase ZB;
     local EnginePhysical Phys;
     local EnginePhysical NextPhys;
     local Vehicle V;
@@ -440,13 +446,16 @@ function RestartRound()
                 ChangeTeam(P, ZBRI.InitialTeam);
 
             // Reset inventory and respawn
+            DiscardInventory(P);
+            ZB = ZombieBotBase(P);
+
             if (P.IsA('PlayerPawn'))
-            {
-                DiscardInventory(P);
                 P.GotoState('PlayerWalking');
+            else if (ZB != None)
+            {
+                ZB.addLoadoutInventory();
+                P.GotoState('StartUp');
             }
-            else
-                ZombieBotBase(P).addLoadoutInventory();
 
             RestartPlayer(P);
         }

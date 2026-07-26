@@ -102,7 +102,7 @@ function Killed(pawn killer, pawn victim, name damageType)
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
 
-    if (killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
+    if (killer != None && killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
     {
         temp = Teams[victim.PlayerReplicationInfo.Team].Size;
         ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
@@ -111,7 +111,12 @@ function Killed(pawn killer, pawn victim, name damageType)
         {
             killer.PlayerReplicationInfo.Score += 5;
             RoundEnded(killer.PlayerReplicationInfo.Team);
+            return;
         }
+
+        // If the newly-switched victim is a bot, reset its AI
+        if (RageBot(victim) != None)
+            victim.GotoState('StartUp');
     }
 }
 
@@ -147,6 +152,7 @@ function Tick(float Delta)
 function RestartRound()
 {
     local Pawn P;
+    local RageBot RB;
     local EnginePhysical Phys;
     local EnginePhysical NextPhys;
     local Vehicle V;
@@ -186,13 +192,16 @@ function RestartRound()
                 ChangeTeam(P, TBRI.InitialTeam);
 
             // Reset inventory and respawn
+            DiscardInventory(P);
+            RB = RageBot(P);
+
             if (P.IsA('PlayerPawn'))
-            {
-                DiscardInventory(P);
                 P.GotoState('PlayerWalking');
+            else if (RB != None)
+            {
+                RB.addLoadoutInventory();
+                P.GotoState('StartUp');
             }
-            else
-                TugBotBase(P).addLoadoutInventory();
 
             RestartPlayer(P);
         }
