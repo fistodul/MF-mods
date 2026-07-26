@@ -290,6 +290,7 @@ function RemoveSavedTeam(Pawn P)
         {
             SavedTeams[i].P = None;
             SavedTeams[i].InitialTeam = 255;
+            return;
         }
     }
 }
