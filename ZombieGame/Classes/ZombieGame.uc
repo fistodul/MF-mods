@@ -549,11 +549,6 @@ event Logout(Pawn Exiting)
 {
     Super.Logout(Exiting);
     RemoveSavedTeam(Exiting);
-
-    if (Teams[0].Size == 0 && Teams[1].Size > 0)
-        RoundEnded(1);
-    else if (Teams[1].Size == 0 && Teams[0].Size > 0)
-        RoundEnded(0);
 }
 
 // Applies buffs based on the game state at the time of respawn
