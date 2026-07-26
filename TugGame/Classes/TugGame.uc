@@ -3,17 +3,21 @@
 //=============================================================================
 class TugGame extends RageTeamGame;
 
+struct TeamTracker
+{
+    var Pawn P;
+    var byte InitialTeam;
+};
+var TeamTracker SavedTeams[128];
+
 var config bool bSpawnAnywhere; // Don't spawn just from your base
 var config bool bKillTransform; // Instead of respawning, instantly turn into the other team
 
 var int MeleeDistance;
 var bool bPendingRestartRound;
 
-var NavigationPoint BlueSpawns[50];
-var int NumBlueSpawns;
-
-var NavigationPoint RedSpawns[50];
-var int NumRedSpawns;
+var NavigationPoint BlueSpawns[50], RedSpawns[50];
+var int NumBlueSpawns, NumRedSpawns;
 
 // Return false if candidate is too close to a spawn of the given team
 function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
@@ -46,25 +50,62 @@ function AddRedSpawn(NavigationPoint NP)
     RedSpawns[NumRedSpawns++] = NP;
 }
 
+function byte GetInitialTeam(Pawn P)
+{
+    local int i;
+
+    for (i = 0; i < ArrayCount(SavedTeams); i++)
+    {
+        if (SavedTeams[i].P == P)
+            return SavedTeams[i].InitialTeam;
+    }
+
+    return 255;
+}
+
+function SetInitialTeam(Pawn P, byte team)
+{
+    local int i, emptyIdx;
+
+    if (GetInitialTeam(P) != 255)
+        return;
+
+    emptyIdx = -1;
+    for (i = 0; i < ArrayCount(SavedTeams); i++)
+    {
+        if (SavedTeams[i].P == None)
+        {
+            emptyIdx = i;
+            break;
+        }
+    }
+
+    if (emptyIdx != -1)
+    {
+        SavedTeams[emptyIdx].P = P;
+        SavedTeams[emptyIdx].InitialTeam = team;
+    }
+}
+
+function RemoveSavedTeam(Pawn P)
+{
+    local int i;
+    for (i = 0; i < ArrayCount(SavedTeams); i++)
+    {
+        if (SavedTeams[i].P == P)
+        {
+            SavedTeams[i].P = None;
+            SavedTeams[i].InitialTeam = 255;
+        }
+    }
+}
+
 // Fix for bots not having a team at login or whatever...
 function AddToTeam(int num, Pawn P)
 {
-    local TugPlayerReplicationInfo TPRI;
-    local TugBotRepInfo TBRI;
-
     // Let parent do its book-keeping first (teamcounts etc).
     Super.AddToTeam(num, P);
-
-    if (P.PlayerReplicationInfo != None)
-    {
-        TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
-        TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
-
-        if (TPRI != None && TPRI.InitialTeam == 255)
-            TPRI.InitialTeam = TPRI.Team;
-        else if (TBRI != None && TBRI.InitialTeam == 255)
-            TBRI.InitialTeam = TBRI.Team;
-    }
+    SetInitialTeam(P, num);
 }
 
 simulated function PreBeginPlay()
@@ -94,6 +135,37 @@ function PostBeginPlay()
     }
 }
 
+// Reset bot AI state, clear targets, exit gunnery gracefully, and re-evaluate
+function ResetBotAI(RageBot RB)
+{
+    RB.QuitGunnery();
+    RB.OldEnemy = None;
+    RB.Target = None;
+    RB.WhatToDoNext('', '');
+}
+
+function ResetBotsAI(Pawn P)
+{
+    local RageBot RB;
+    local Pawn Other;
+
+    // Reset P if it's a bot
+    RB = RageBot(P);
+    if (RB != None)
+        ResetBotAI(RB);
+
+    // Clear references to P from all other bots in the match
+    for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
+    {
+        RB = RageBot(Other);
+        if (
+            Other != P && RB != None && P.Health > 0 &&
+            (RB.Enemy == P || RB.OldEnemy == P || RB.Target == P)
+        )
+            ResetBotAI(RB);
+    }
+}
+
 // Move the killed player to the other team before the round ends
 function Killed(pawn killer, pawn victim, name damageType)
 {
@@ -114,9 +186,8 @@ function Killed(pawn killer, pawn victim, name damageType)
             return;
         }
 
-        // If the newly-switched victim is a bot, reset its AI
-        if (RageBot(victim) != None)
-            victim.GotoState('StartUp');
+        // Reset bots AI safely for victim and any bots targeting victim
+        ResetBotsAI(victim);
     }
 }
 
@@ -153,13 +224,10 @@ function RestartRound()
 {
     local Pawn P;
     local RageBot RB;
-    local EnginePhysical Phys;
-    local EnginePhysical NextPhys;
+    local EnginePhysical Phys, NextPhys;
     local Vehicle V;
     local TripBombOnGround T;
-
-    local TugPlayerReplicationInfo TPRI;
-    local TugBotRepInfo TBRI;
+    local byte initTeam;
 
     RemainingTime = TimeLimit * 60;
     GameReplicationInfo.RemainingTime = RemainingTime;
@@ -182,14 +250,9 @@ function RestartRound()
     {
         if (P.PlayerReplicationInfo != None && !P.IsA('Spectator'))
         {
-            // Reset team to initial
-            TPRI = TugPlayerReplicationInfo(P.PlayerReplicationInfo);
-            TBRI = TugBotRepInfo(P.PlayerReplicationInfo);
-
-            if (TPRI != None && TPRI.InitialTeam != TPRI.Team)
-                ChangeTeam(P, TPRI.InitialTeam);
-            else if (TBRI != None && TBRI.InitialTeam != TBRI.Team)
-                ChangeTeam(P, TBRI.InitialTeam);
+            initTeam = GetInitialTeam(P);
+            if (initTeam != 255 && initTeam != P.PlayerReplicationInfo.Team)
+                ChangeTeam(P, initTeam);
 
             // Reset inventory and respawn
             DiscardInventory(P);
@@ -219,6 +282,7 @@ function EndGame(string Reason)
 event Logout(Pawn Exiting)
 {
     Super.Logout(Exiting);
+    RemoveSavedTeam(Exiting);
 
     if (Teams[0].Size == 0 && Teams[1].Size > 0)
         RoundEnded(1);
@@ -309,10 +373,7 @@ event PlayerPawn Login
         }
 
         if (P.PlayerReplicationInfo != None)
-        {
-            TugPlayerReplicationInfo(P.PlayerReplicationInfo).InitialTeam = P.PlayerReplicationInfo.Team;
             P.static.SetMultiSkin(P, P.TeamSkinName, P.PlayerReplicationInfo.Team);
-        }
         else
             P.static.SetMultiSkin(P, P.TeamSkinName, 0);
     }

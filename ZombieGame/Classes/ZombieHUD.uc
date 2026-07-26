@@ -105,9 +105,7 @@ simulated function DrawArmour(canvas Canvas, int sX, int sY)
 simulated function DrawGameSpecificStuff(canvas Canvas)
 {
     local float sX, sY;
-    local int CurTime;
-    local int Minutes;
-    local int Seconds;
+    local int CurTime, Minutes, Seconds;
     local string Countdown;
 
     // First let super draw team scores / game object icon
@@ -135,14 +133,11 @@ simulated function DrawGameSpecificStuff(canvas Canvas)
 
 simulated function DrawInventory(canvas Canvas, int sX, int sY)
 {
-    local RageWeapon Weap;
-    local RageWeapon WeapT;
+    local RageWeapon Weap, aWeaps[12]; // Max of ten groups
     local int LeftToDraw, I;
     local float CurX;
     local Inventory Inv;
-    local RageWeapon aWeaps[12]; // Max of ten groups
     local int WeapC;
-    local bool bSwapped;
 
     // Find all rage weaps
     for (Inv = RagePlayerOwner.Inventory; Inv != None; Inv = Inv.Inventory)

@@ -250,7 +250,6 @@ state PlayerWalking
 
 defaultproperties
 {
-    PlayerReplicationInfoClass=Class'ZombiePlayerReplicationInfo'
     MaxCarry=6
     Footstep1=Sound'RagePlayerSounds.(All).stone01'
     Footstep2=Sound'RagePlayerSounds.(All).stone02'

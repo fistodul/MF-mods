@@ -3,6 +3,13 @@
 //=============================================================================
 class ZombieGame extends RageTeamGame;
 
+struct TeamTracker
+{
+    var Pawn P;
+    var byte InitialTeam;
+};
+var TeamTracker SavedTeams[128];
+
 // Exponent influencing zombie strength, recommended values: 0.16 - 0.2
 var config float zBiasExp;
 
@@ -13,12 +20,10 @@ var config bool bSpawnAnywhere; // Don't spawn Zombies just from red base
 var config bool bZombieInfect; // Humans turn into zombies upon being killed by one
 var config bool bKillTransform; // Instead of respawning, instantly turn into a zombie
 
-var NavigationPoint HumanSpawns[50];
-var int NumHumanSpawns;
+var NavigationPoint HumanSpawns[50], ZombieSpawns[50];
+var int NumHumanSpawns, NumZombieSpawns;
 
 var int MeleeDistance;
-var NavigationPoint ZombieSpawns[50];
-var int NumZombieSpawns;
 var bool bPendingRestartRound;
 
 var class<Inventory> MeleeItems[3];
@@ -236,25 +241,62 @@ function AddZombieSpawn(NavigationPoint NP)
 // SetPhysics(PHYS_Flying);
 // SetPhysics(PHYS_None);
 
+function byte GetInitialTeam(Pawn P)
+{
+    local int i;
+
+    for (i = 0; i < ArrayCount(SavedTeams); i++)
+    {
+        if (SavedTeams[i].P == P)
+            return SavedTeams[i].InitialTeam;
+    }
+
+    return 255;
+}
+
+function SetInitialTeam(Pawn P, byte team)
+{
+    local int i, emptyIdx;
+
+    if (GetInitialTeam(P) != 255)
+        return;
+
+    emptyIdx = -1;
+    for (i = 0; i < ArrayCount(SavedTeams); i++)
+    {
+        if (SavedTeams[i].P == None)
+        {
+            emptyIdx = i;
+            break;
+        }
+    }
+
+    if (emptyIdx != -1)
+    {
+        SavedTeams[emptyIdx].P = P;
+        SavedTeams[emptyIdx].InitialTeam = team;
+    }
+}
+
+function RemoveSavedTeam(Pawn P)
+{
+    local int i;
+    for (i = 0; i < ArrayCount(SavedTeams); i++)
+    {
+        if (SavedTeams[i].P == P)
+        {
+            SavedTeams[i].P = None;
+            SavedTeams[i].InitialTeam = 255;
+        }
+    }
+}
+
 // Fix for bots not having a team in RestartPlayer...
 function AddToTeam(int num, Pawn P)
 {
-    local ZombiePlayerReplicationInfo ZPRI;
-    local ZombieBotRepInfo ZBRI;
-
     // Let parent do its book-keeping first (teamcounts etc).
     Super.AddToTeam(num, P);
-
-    if (P.PlayerReplicationInfo != None)
-    {
-        ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
-        ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
-
-        if (ZPRI != None && ZPRI.InitialTeam == 255)
-            ZPRI.InitialTeam = ZPRI.Team;
-        else if (ZBRI != None && ZBRI.InitialTeam == 255)
-            ZBRI.InitialTeam = ZBRI.Team;
-    }
+    SetInitialTeam(P, num);
 
     if (num == 1)
         BecomeZombie(P);
@@ -324,6 +366,37 @@ function PostBeginPlay()
     }
 }
 
+// Reset bot AI state, clear targets, exit gunnery gracefully, and re-evaluate
+function ResetBotAI(RageBot RB)
+{
+    RB.QuitGunnery();
+    RB.OldEnemy = None;
+    RB.Target = None;
+    RB.WhatToDoNext('', '');
+}
+
+function ResetBotsAI(Pawn P)
+{
+    local RageBot RB;
+    local Pawn Other;
+
+    // Reset P if it's a bot
+    RB = RageBot(P);
+    if (RB != None)
+        ResetBotAI(RB);
+
+    // Clear references to P from all other bots in the match
+    for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
+    {
+        RB = RageBot(Other);
+        if (
+            Other != P && RB != None && P.Health > 0 &&
+            (RB.Enemy == P || RB.OldEnemy == P || RB.Target == P)
+        )
+            ResetBotAI(RB);
+    }
+}
+
 function Killed(pawn killer, pawn victim, name damageType)
 {
     local ZombiePlayer ZP;
@@ -358,7 +431,7 @@ function Killed(pawn killer, pawn victim, name damageType)
         }
 
         // Move the infected to red before the round ends
-        if (bZombieInfect)
+        if (bZombieInfect && damageType != 'RunDown')
         {
             ChangeTeam(victim, 1);
 
@@ -369,9 +442,8 @@ function Killed(pawn killer, pawn victim, name damageType)
                 return;
             }
 
-            // If the newly-switched victim is a bot, reset its AI
-            if (RageBot(victim) != None)
-                victim.GotoState('StartUp');
+            // Reset bots AI safely for victim and any bots targeting victim
+            ResetBotsAI(victim);
         }
     }
 }
@@ -407,13 +479,10 @@ function RestartRound()
 {
     local Pawn P;
     local ZombieBotBase ZB;
-    local EnginePhysical Phys;
-    local EnginePhysical NextPhys;
+    local EnginePhysical Phys, NextPhys;
     local Vehicle V;
     local TripBombOnGround T;
-
-    local ZombiePlayerReplicationInfo ZPRI;
-    local ZombieBotRepInfo ZBRI;
+    local byte initTeam;
 
     RemainingTime = TimeLimit * 60;
     GameReplicationInfo.RemainingTime = RemainingTime;
@@ -431,19 +500,14 @@ function RestartRound()
     foreach AllActors(Class'TripBombOnGround', T)
         T.Destroy();
 
-    // Reset all players to humans (initial team 0) and respawn
+    // Reset players to initial teams and respawn
     for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
         if (P.PlayerReplicationInfo != None && !P.IsA('Spectator'))
         {
-            // Reset to initial team (humans)
-            ZPRI = ZombiePlayerReplicationInfo(P.PlayerReplicationInfo);
-            ZBRI = ZombieBotRepInfo(P.PlayerReplicationInfo);
-
-            if (ZPRI != None && ZPRI.InitialTeam != ZPRI.Team)
-                ChangeTeam(P, ZPRI.InitialTeam);
-            else if (ZBRI != None && ZBRI.InitialTeam != ZBRI.Team)
-                ChangeTeam(P, ZBRI.InitialTeam);
+            initTeam = GetInitialTeam(P);
+            if (initTeam != 255 && initTeam != P.PlayerReplicationInfo.Team)
+                ChangeTeam(P, initTeam);
 
             // Reset inventory and respawn
             DiscardInventory(P);
@@ -473,6 +537,7 @@ function EndGame(string Reason)
 event Logout(Pawn Exiting)
 {
     Super.Logout(Exiting);
+    RemoveSavedTeam(Exiting);
 
     if (Teams[0].Size == 0 && Teams[1].Size > 0)
         RoundEnded(1);
@@ -605,8 +670,6 @@ event PlayerPawn Login
 
         if (P.PlayerReplicationInfo != None)
         {
-            ZombiePlayerReplicationInfo(P.PlayerReplicationInfo).InitialTeam = P.PlayerReplicationInfo.Team;
-
             if (P.PlayerReplicationInfo.Team == 1)
                 P.PlayerRestartState = 'PlayerWalking';
 

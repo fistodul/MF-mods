@@ -3,9 +3,7 @@ class TugHUD extends RageTeamHUD;
 simulated function DrawGameSpecificStuff(canvas Canvas)
 {
     local float sX, sY;
-    local int CurTime;
-    local int Minutes;
-    local int Seconds;
+    local int CurTime, Minutes, Seconds;
     local string Countdown;
 
     // First let super draw team scores / game object icon
