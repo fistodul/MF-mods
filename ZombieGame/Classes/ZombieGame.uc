@@ -146,9 +146,10 @@ function TransformItem(Inventory Inv, string NewInv)
 // Give Human equivalents to Zombie items
 function TransformToHumanItems(Pawn P)
 {
-    local Inventory inv; // Inv.Next
-    for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
+    local Inventory Inv, NextInv;
+    for (Inv = P.Inventory; Inv != None; Inv = NextInv)
     {
+        NextInv = Inv.Inventory;
         switch (Inv.Class)
         {
             case Class'ZombieKnife':
@@ -167,9 +168,10 @@ function TransformToHumanItems(Pawn P)
 // Give Zombie equivalents to Human items
 function TransformToZombieItems(Pawn P)
 {
-    local Inventory inv; // Inv.Next
-    for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
+    local Inventory Inv, NextInv;
+    for (Inv = P.Inventory; Inv != None; Inv = NextInv)
     {
+        NextInv = Inv.Inventory;
         switch (Inv.Class)
         {
             case Class'RageKnife':
@@ -188,9 +190,10 @@ function TransformToZombieItems(Pawn P)
 // Strip ranged items
 function StripRanged(Pawn P)
 {
-    local Inventory inv; // Inv.Next
-    for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
+    local Inventory Inv, NextInv;
+    for (Inv = P.Inventory; Inv != None; Inv = NextInv)
     {
+        NextInv = Inv.Inventory;
         if (!IsMeleeItem(Inv))
             Inv.Destroy();
     }
