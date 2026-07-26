@@ -510,11 +510,12 @@ function RestartRound()
                 ChangeTeam(P, initTeam);
 
             // Reset inventory and respawn
-            DiscardInventory(P);
             ZB = ZombieBotBase(P);
-
             if (P.IsA('PlayerPawn'))
+            {
+                DiscardInventory(P);
                 P.GotoState('PlayerWalking');
+            }
             else if (ZB != None)
             {
                 ZB.addLoadoutInventory();

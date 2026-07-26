@@ -255,11 +255,12 @@ function RestartRound()
                 ChangeTeam(P, initTeam);
 
             // Reset inventory and respawn
-            DiscardInventory(P);
             RB = RageBot(P);
-
             if (P.IsA('PlayerPawn'))
+            {
+                DiscardInventory(P);
                 P.GotoState('PlayerWalking');
+            }
             else if (RB != None)
             {
                 RB.addLoadoutInventory();
