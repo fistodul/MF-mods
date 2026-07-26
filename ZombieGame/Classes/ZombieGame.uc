@@ -406,8 +406,7 @@ function Killed(pawn killer, pawn victim, name damageType)
     local ZombieBotBase ZB;
 
     local float UnitsAway;
-    local int HealthBoost;
-    local int MaxHealth;
+    local int HealthBoost, MaxHealth;
 
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
