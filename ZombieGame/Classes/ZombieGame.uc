@@ -481,7 +481,8 @@ function RestartRound()
     local ZombieBotBase ZB;
     local EnginePhysical Phys, NextPhys;
     local Vehicle V;
-    local TripBombOnGround T;
+    local TripBomb TB;
+    local TripBombOnGround TBG;
     local byte initTeam;
 
     RemainingTime = TimeLimit * 60;
@@ -497,8 +498,14 @@ function RestartRound()
             V.SilentDestroy();
     }
 
-    foreach AllActors(Class'TripBombOnGround', T)
-        T.Destroy();
+    foreach AllActors(Class'TripBomb', TB)
+    {
+        TB.Laser.Destroy();
+        TB.Destroy();
+    }
+
+    foreach AllActors(Class'TripBombOnGround', TBG)
+        TBG.Destroy();
 
     // Reset players to initial teams and respawn
     for (P = Level.PawnList; P != None; P = P.NextPawn)
