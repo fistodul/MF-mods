@@ -50,7 +50,7 @@ function BecomeHuman(Pawn P)
     if (ZP != None)
     {
         ZP.MaxHealth = P.Default.Health;
-        ZP.MaxCarry = P.Default.MaxCarry;
+        ZP.MaxCarry = P.Default.MaxCarry + 1;
     }
     else
     {
@@ -58,7 +58,7 @@ function BecomeHuman(Pawn P)
         if (ZB != None)
             ZB.MaxHealth = P.Default.Health;
 
-        P.MaxCarry = P.Default.MaxCarry;
+        P.MaxCarry = P.Default.MaxCarry + 1;
     }
 
     P.BaseGroundSpeed = P.Default.BaseGroundSpeed;
