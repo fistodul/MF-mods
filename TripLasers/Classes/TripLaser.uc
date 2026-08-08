@@ -143,7 +143,7 @@ state Active
             HitA = Trace(HitLocation, HitNormal, TraceEnd, Location, true);
             if (HitA != None && Pawn(HitA) != None && !IsFriendly(HitA))
             {
-                HitA.TakeDamage(260, Instigator, HitLocation, vect(0, 0, 0), 'RageWeaponsDOTTripBombs');
+                HitA.TakeDamage(280, Instigator, HitLocation, vect(0, 0, 0), 'RageWeaponsDOTTripBombs');
                 Explode();
                 return;
             }
