@@ -313,10 +313,7 @@ simulated function PreBeginPlay()
     local ZombieReplicationInfo ZRI;
 
     if (bZombieInfect)
-    {
-        FragLimit = 3;
         bScoreTeamKills = false;
-    }
     else
         FragLimit = 30;
 
@@ -724,6 +721,7 @@ defaultproperties
     MeleeItems(1)=Class'ZombieShot'
     MeleeItems(0)=Class'ZombieArmour'
     GameName="Zombie Mode"
+    FragLimit=3
     TimeLimit=8
     StartUpTeamMessage="You are a"
     InstructionSound=Sound'RagePlayerVoice.Fire_At_Will'
