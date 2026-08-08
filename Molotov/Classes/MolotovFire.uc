@@ -75,9 +75,10 @@ function Timer()
 
 function DamageNearby(float Damage)
 {
-    local Actor A;
+    local Actor A, HitA;
     local float Dist;
     local float VerticalDist;
+    local vector HitLocation, HitNormal;
 
     // All actors with a TakeDamage implementation
     foreach RadiusActors(class'Actor', A, FireRadius, Location)
@@ -87,7 +88,12 @@ function DamageNearby(float Damage)
 
         // Vehicles seem to be hit farther without Dist checking
         if (Dist <= FireRadius && VerticalDist <= FireRadius * 0.5)
-            A.TakeDamage(Damage, Instigator, Location, vect(0, 0, 0), 'Exploded');
+        {
+            // Damage if line of sight is clear, or if target is within half radius (fire spreading through doors)
+            HitA = Trace(HitLocation, HitNormal, A.Location, Location, false);
+            if (HitA == None || Dist <= FireRadius * 0.5)
+                A.TakeDamage(Damage, Instigator, Location, vect(0, 0, 0), 'Exploded');
+        }
     }
 }
 
