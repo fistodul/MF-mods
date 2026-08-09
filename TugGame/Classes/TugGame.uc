@@ -166,29 +166,31 @@ function ResetBotsAI(Pawn P)
     }
 }
 
+function MovedTeam(Pawn Instigator, Pawn Other)
+{
+    local byte OldTeam;
+    OldTeam = Other.PlayerReplicationInfo.Team;
+
+    ChangeTeam(Other, Instigator.PlayerReplicationInfo.Team);
+    if (Teams[OldTeam].Size == 0)
+    {
+        Instigator.PlayerReplicationInfo.Score += 5;
+        RoundEnded(1);
+        return;
+    }
+
+    // Reset bots AI safely for the pawn and any bots targeting it
+    ResetBotsAI(Other);
+}
+
 // Move the killed player to the other team before the round ends
 function Killed(pawn killer, pawn victim, name damageType)
 {
-    local int temp;
-
     // Call parent first to do normal death processing
     Super.Killed(killer, victim, DamageType);
 
     if (killer != None && killer.PlayerReplicationInfo.Team != victim.PlayerReplicationInfo.Team)
-    {
-        temp = Teams[victim.PlayerReplicationInfo.Team].Size;
-        ChangeTeam(victim, killer.PlayerReplicationInfo.Team);
-
-        if (temp <= 1)
-        {
-            killer.PlayerReplicationInfo.Score += 5;
-            RoundEnded(killer.PlayerReplicationInfo.Team);
-            return;
-        }
-
-        // Reset bots AI safely for victim and any bots targeting victim
-        ResetBotsAI(victim);
-    }
+        MovedTeam(killer, victim);
 }
 
 function RoundEnded(int Winner)
