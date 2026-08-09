@@ -313,7 +313,10 @@ simulated function PreBeginPlay()
     local ZombieReplicationInfo ZRI;
 
     if (bZombieInfect)
+    {
+        FragLimit = 3;
         bScoreTeamKills = false;
+    }
     else
         FragLimit = 30;
 
@@ -398,6 +401,23 @@ function ResetBotsAI(Pawn P)
     }
 }
 
+function MovedTeam(Pawn Instigator, Pawn Other)
+{
+    local byte OldTeam;
+    OldTeam = Other.PlayerReplicationInfo.Team;
+
+    ChangeTeam(Other, Instigator.PlayerReplicationInfo.Team);
+    if (Teams[OldTeam].Size == 0)
+    {
+        Instigator.PlayerReplicationInfo.Score += 5;
+        RoundEnded(1);
+        return;
+    }
+
+    // Reset bots AI safely for the pawn and any bots targeting it
+    ResetBotsAI(Other);
+}
+
 function Killed(pawn killer, pawn victim, name damageType)
 {
     local ZombiePlayer ZP;
@@ -432,19 +452,7 @@ function Killed(pawn killer, pawn victim, name damageType)
 
         // Move the infected to red before the round ends
         if (bZombieInfect && damageType != 'RunDown')
-        {
-            ChangeTeam(victim, 1);
-
-            if (Teams[0].Size == 0)
-            {
-                killer.PlayerReplicationInfo.Score += 5;
-                RoundEnded(1);
-                return;
-            }
-
-            // Reset bots AI safely for victim and any bots targeting victim
-            ResetBotsAI(victim);
-        }
+            MovedTeam(killer, victim);
     }
 }
 
@@ -723,6 +731,7 @@ defaultproperties
     GameName="Zombie Mode"
     FragLimit=3
     TimeLimit=8
+    bForceRespawn=true
     StartUpTeamMessage="You are a"
     InstructionSound=Sound'RagePlayerVoice.Fire_At_Will'
     BotConfigType=Class'ZombieBotInfo'
