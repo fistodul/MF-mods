@@ -224,7 +224,7 @@ function Tick(float Delta)
 
 function RestartRound()
 {
-    local Pawn P;
+    local Pawn P, NextP;
     local RageBot RB;
     local EnginePhysical Phys, NextPhys;
     local Vehicle V;
@@ -255,8 +255,10 @@ function RestartRound()
         TBG.Destroy();
 
     // Reset players to initial teams and respawn
-    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    for (P = Level.PawnList; P != None; P = NextP)
     {
+        NextP = P.NextPawn; // Cache before modifying player or changing team
+
         if (P.PlayerReplicationInfo != None && !P.IsA('Spectator'))
         {
             initTeam = GetInitialTeam(P);
@@ -268,7 +270,8 @@ function RestartRound()
             if (P.IsA('PlayerPawn'))
             {
                 DiscardInventory(P);
-                P.GotoState('PlayerWalking');
+                P.PlayerRestartState = 'StartupInLoadout';
+                P.GotoState(P.PlayerRestartState);
             }
             else if (RB != None)
             {
