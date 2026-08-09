@@ -25,12 +25,12 @@ function InjectDrug(Pawn Injectee)
     {
         if (GetZombieGame().bZombieInfect && Injectee.Health <= 100)
         {
-            if (GetZombieGame().bKillTransform)
-                GetZombieGame().MovedTeam(Pawn(Owner), Injectee);
-            else
-                Injectee.Died(Pawn(Owner), MyDamageType, HitLocation);
-
             UseAmmo(1);
+            GetZombieGame().MovedTeam(Pawn(Owner), Injectee);
+            Pawn(Owner).PlayerReplicationInfo.Score += 2.0;
+
+            if (!GetZombieGame().bKillTransform)
+                Injectee.Died(Pawn(Owner), MyDamageType, HitLocation);
         }
 
         return;

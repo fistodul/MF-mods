@@ -24,6 +24,12 @@ function ZombieGame GetZombieGame()
     return ZG;
 }
 
+simulated function EndLoadout()
+{
+    Super.EndLoadout();
+    GetZombieGame().TransformItems(self);
+}
+
 function String UntilSpace(string s)
 {
     local int SpacePosition;

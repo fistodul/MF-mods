@@ -143,6 +143,14 @@ function TransformItem(Inventory Inv, string NewInv)
     GiveWeapon(P, NewInv);
 }
 
+function TransformItems(Pawn P)
+{
+    if (P.PlayerReplicationInfo.Team == 1)
+        TransformToZombieItems(P);
+    else
+        TransformToHumanItems(P);
+}
+
 // Give Human equivalents to Zombie items
 function TransformToHumanItems(Pawn P)
 {
@@ -155,8 +163,8 @@ function TransformToHumanItems(Pawn P)
             case Class'ZombieKnife':
                 TransformItem(Inv, "RageGame.RageKnife");
                 break;
-            case Class'ZombieShot':
-                TransformItem(Inv, "RageGame.AdrenalineShot");
+            case Class'AdrenalineShot':
+                TransformItem(Inv, "ZombieGame.ZombieShot");
                 break;
             case Class'ZombieArmour':
                 TransformItem(Inv, "RageGame.RageArmour");
