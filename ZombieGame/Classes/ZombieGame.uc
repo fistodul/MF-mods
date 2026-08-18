@@ -415,7 +415,7 @@ function MovedTeam(Pawn Instigator, Pawn Other)
     OldTeam = Other.PlayerReplicationInfo.Team;
 
     ChangeTeam(Other, Instigator.PlayerReplicationInfo.Team);
-    if (Teams[OldTeam].Size == 0)
+    if (Teams[OldTeam].Size <= 0)
     {
         Instigator.PlayerReplicationInfo.Score += 2;
         RoundEnded(Instigator.PlayerReplicationInfo.Team);
