@@ -16,21 +16,23 @@ function ZombieGame GetZombieGame()
 
 function InjectDrug(Pawn Injectee)
 {
+    local Pawn O;
     local ZombiePlayer ZP;
     local ZombieBotBase ZB;
     local int MaxHealth;
     local vector HitLocation;
 
-    if (Pawn(Owner).PlayerReplicationInfo.Team != Injectee.PlayerReplicationInfo.Team)
+    O = Pawn(Owner);
+    if (O.PlayerReplicationInfo.Team != Injectee.PlayerReplicationInfo.Team)
     {
         if (GetZombieGame().bZombieInfect && Injectee.Health <= 100)
         {
             UseAmmo(1);
-            GetZombieGame().MovedTeam(Pawn(Owner), Injectee);
-            Pawn(Owner).PlayerReplicationInfo.Score += 2.0;
+            GetZombieGame().MovedTeam(O, Injectee);
+            O.PlayerReplicationInfo.Score += 2.0;
 
             if (!GetZombieGame().bKillTransform)
-                Injectee.Died(Pawn(Owner), MyDamageType, HitLocation);
+                Injectee.Died(O, MyDamageType, HitLocation);
         }
 
         return;
