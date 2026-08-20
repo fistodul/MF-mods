@@ -12,3 +12,8 @@ Cache*.tmp
 GameuxInstallHelper.dll
 Manual.pdf
 MobileForces*.ico
+*.uc
+!Molotov/**/*.uc
+!TripLasers/**/*.uc
+!TugGame/**/*.uc
+!ZombieGame/**/*.uc
