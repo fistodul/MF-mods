@@ -39,3 +39,7 @@ simulated function HitWall(vector HitNormal, actor Wall)
         PlaySound(Sound'WeaponSFX_TripBombs.Bounce', SLOT_Misc, 1.5);
 
 }
+
+defaultproperties
+{
+}

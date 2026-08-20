@@ -27,6 +27,6 @@ simulated function String GetGoalMessage(PlayerPawn Player)
 
 defaultproperties
 {
-    HumanString="*Player*"
-    GoalStrings(1)="Survive the attack of the undead or become one of them "
+     HumanString="*Player*"
+     GoalStrings(1)="Survive the attack of the undead or become one of them "
 }

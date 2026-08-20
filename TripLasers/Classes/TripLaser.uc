@@ -197,5 +197,5 @@ state Active
 
 defaultproperties
 {
-    LaserMaxDistance=1536.0
+     LaserMaxDistance=1536.000000
 }

@@ -55,3 +55,7 @@ function InjectDrug(Pawn Injectee)
         Injectee.PlaySound(Injectee.HitSound2, SLOT_Talk, 0.6);
     }
 }
+
+defaultproperties
+{
+}

@@ -75,7 +75,7 @@ function ThrowKnife()
 
 defaultproperties
 {
-    SlashDamage=67
-    Range=100
-    ProjectileClass=Class'ZombieKnife_Thrown'
+     SlashDamage=67
+     Range=100.000000
+     ProjectileClass=Class'ZombieGame.ZombieKnife_Thrown'
 }

@@ -189,5 +189,5 @@ simulated function DrawInventory(canvas Canvas, int sX, int sY)
 
 defaultproperties
 {
-    ScoreIcons(2)=(X=128,Y=128,W=64,H=64,t=Texture'Rage.ScoreIcons')
+     ScoreIcons(2)=(X=128,Y=128,W=64,H=64,t=Texture'Rage.ScoreIcons')
 }

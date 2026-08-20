@@ -125,3 +125,7 @@ simulated function Tick(float Delta)
         }
     }
 }
+
+defaultproperties
+{
+}

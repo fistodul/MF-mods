@@ -19,5 +19,5 @@ function Died(pawn Killer, name damageType, vector HitLocation)
 
 defaultproperties
 {
-    bGoodDriver=True
+     bGoodDriver=True
 }

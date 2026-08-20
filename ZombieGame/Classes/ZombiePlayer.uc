@@ -256,16 +256,16 @@ state PlayerWalking
 
 defaultproperties
 {
-    MaxCarry=6
-    Footstep1=Sound'RagePlayerSounds.(All).stone01'
-    Footstep2=Sound'RagePlayerSounds.(All).stone02'
-    Footstep3=Sound'RagePlayerSounds.(All).stone03'
-    TeamSkin1=1
-    TeamSkin2=2
-    TeamSkin3=3
-    TeamSkinCaptain=2
-    TeamSkinName="RagePlayerGfx.MFTeamB"
-    TeamMeshName="RageGfx.RagePlayer2Mesh"
-    MenuName="Covert Trooper"
-    Mesh=SkeletalMesh'RageGfx.RagePlayer2Mesh'
+     MaxCarry=6
+     Footstep1=Sound'RagePlayerSounds.(All).stone01'
+     Footstep2=Sound'RagePlayerSounds.(All).stone02'
+     Footstep3=Sound'RagePlayerSounds.(All).stone03'
+     TeamSkin1=1
+     TeamSkin2=2
+     TeamSkin3=3
+     TeamSkinCaptain=2
+     TeamSkinName="RagePlayerGfx.MFTeamB"
+     TeamMeshName="RageGfx.RagePlayer2Mesh"
+     MenuName="Covert Trooper"
+     Mesh=SkeletalMesh'RageGfx.RagePlayer2Mesh'
 }

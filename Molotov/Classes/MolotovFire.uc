@@ -99,14 +99,14 @@ function DamageNearby(float Damage)
 
 defaultproperties
 {
-    BurnDuration=6.9
-    DamagePerTimer=2.6
-    FireRadius=300.0
-    DrawType=DT_None
-    CollisionRadius=8.0
-    CollisionHeight=8.0
-    bCollideActors=true
-    bCollideWorld=true
-    Physics=PHYS_Falling
-    Mass=10.0
+     BurnDuration=6.900000
+     DamagePerTimer=2.600000
+     FireRadius=300.000000
+     Physics=PHYS_Falling
+     DrawType=DT_None
+     CollisionRadius=8.000000
+     CollisionHeight=8.000000
+     bCollideActors=True
+     bCollideWorld=True
+     Mass=10.000000
 }

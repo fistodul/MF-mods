@@ -15,5 +15,5 @@ simulated function String GetGoalMessage(PlayerPawn Player)
 
 defaultproperties
 {
-    GoalStrings(0)="Convert each player to your team "
+     GoalStrings(0)="Convert each player to your team "
 }

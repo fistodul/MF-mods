@@ -29,9 +29,9 @@ auto state Dangerous
 
 defaultproperties
 {
-    Damage=158
-    MaxSpeed=2250
-    speed=1000
-    TimeBeforeReturn=4.5
-    MyDamageType=RageWeaponsDOTRocketLauncher
+     TimeBeforeReturn=4.500000
+     speed=1000.000000
+     MaxSpeed=2250.000000
+     Damage=158.000000
+     MyDamageType=RageWeaponsDOTRocketLauncher
 }

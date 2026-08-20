@@ -70,9 +70,9 @@ function ThrowTripBomb()
 
 defaultproperties
 {
-    MaxLaserDistance=1536.0
-    MaxClipAmmo=3
-    DeathMessage="%k Disintegrated %o."
-    PickupMessage="Loaded up TripLasers."
-    ItemName="Trip Laser"
+     MaxLaserDistance=1536.000000
+     MaxClipAmmo=3
+     DeathMessage="%k Disintegrated %o."
+     PickupMessage="Loaded up TripLasers."
+     ItemName="Trip Laser"
 }
