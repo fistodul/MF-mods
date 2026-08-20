@@ -13,6 +13,7 @@ GameuxInstallHelper.dll
 Manual.pdf
 MobileForces*.ico
 *.uc
+!CoopMode/**/*.uc
 !Molotov/**/*.uc
 !TripLasers/**/*.uc
 !TugGame/**/*.uc
