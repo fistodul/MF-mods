@@ -140,6 +140,7 @@ function PostBeginPlay()
 function ResetBotAI(RageBot RB)
 {
     RB.QuitGunnery();
+    RB.Enemy = None;
     RB.OldEnemy = None;
     RB.Target = None;
     RB.WhatToDoNext('', '');
@@ -159,10 +160,7 @@ function ResetBotsAI(Pawn P)
     for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
     {
         RB = RageBot(Other);
-        if (
-            Other != P && RB != None && P.Health > 0 &&
-            (RB.Enemy == P || RB.OldEnemy == P || RB.Target == P)
-        )
+        if (Other != P && RB != None && (RB.Enemy == P || RB.OldEnemy == P || RB.Target == P))
             ResetBotAI(RB);
     }
 }
