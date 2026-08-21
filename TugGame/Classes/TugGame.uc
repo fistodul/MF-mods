@@ -119,6 +119,7 @@ function PostBeginPlay()
     local NavigationPoint NP;
 
     Super.PostBeginPlay();
+    bPendingRestartRound = false;
     NumBlueSpawns = 0;
     NumRedSpawns = 0;
 
