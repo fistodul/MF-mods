@@ -3,6 +3,9 @@ class ZombiePlayer extends RagePlayerX;
 var ZombieGame ZG;
 var int MaxHealth;
 var byte MaxCarry;
+var bool bIsNemesis;
+var float regenerationRate;
+var float regenerationAccumulator;
 
 replication
 {
@@ -10,6 +13,12 @@ replication
         BecomeHuman, BecomeZombie, RunAs, SetTo, SetToLooking, GetTo, GetToLooking, Teleport;
     reliable if (Role == ROLE_Authority)
         MaxHealth, MaxCarry;
+}
+
+simulated function PostBeginPlay()
+{
+    Super.PostBeginPlay();
+    regenerationAccumulator = 0.0;
 }
 
 function ZombieGame GetZombieGame()
@@ -22,6 +31,26 @@ function ZombieGame GetZombieGame()
     }
 
     return ZG;
+}
+
+function bool AddInventory(inventory NewItem)
+{
+    local bool Ret;
+    local RageWeapon RW;
+
+    Ret = Super.AddInventory(NewItem);
+
+    if (bIsNemesis && PlayerReplicationInfo.Team != 1)
+    {
+        RW = RageWeapon(NewItem);
+        if (RW != None && RW.MaxClips > 1)
+        {
+            RW.MaxClipAmmo = 9999;
+            RW.GiveFullAmmo();
+        }
+    }
+
+    return Ret;
 }
 
 simulated function EndLoadout()
@@ -256,6 +285,8 @@ state PlayerWalking
 
 defaultproperties
 {
+     bIsNemesis=False
+     regenerationRate=1.500000
      MaxCarry=6
      Footstep1=Sound'RagePlayerSounds.(All).stone01'
      Footstep2=Sound'RagePlayerSounds.(All).stone02'

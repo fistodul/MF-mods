@@ -1,11 +1,40 @@
 class ZombieBotBase extends RageBot;
 
 var int MaxHealth;
+var bool bIsNemesis;
+var float regenerationRate;
+var float regenerationAccumulator;
 
 replication
 {
     reliable if (Role == ROLE_Authority)
         MaxHealth;
+}
+
+simulated function PostBeginPlay()
+{
+    Super.PostBeginPlay();
+    regenerationAccumulator = 0.0;
+}
+
+function bool AddInventory(inventory NewItem)
+{
+    local bool Ret;
+    local RageWeapon RW;
+
+    Ret = Super.AddInventory(NewItem);
+
+    if (bIsNemesis && PlayerReplicationInfo.Team != 1)
+    {
+        RW = RageWeapon(NewItem);
+        if (RW != None && RW.MaxClips > 1)
+        {
+            RW.MaxClipAmmo = 9999;
+            RW.GiveFullAmmo();
+        }
+    }
+
+    return Ret;
 }
 
 // Zombies get jack shite
@@ -44,6 +73,8 @@ function Died(pawn Killer, name damageType, vector HitLocation)
 
 defaultproperties
 {
+     bIsNemesis=False
+     regenerationRate=1.500000
      bGoodDriver=True
      PreferedTeam=0
 }

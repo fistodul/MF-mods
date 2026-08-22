@@ -22,7 +22,7 @@ simulated function String GetGoalMessage(PlayerPawn Player)
     else
         EnemyTeamName = Class'ZombieScoreBoard'.Default.TeamName[1];
 
-    return "Kill " $ FragLimit $ " " $ EnemyTeamName $ " " $ "in " $ TimeLimit $ " minutes to Win!";
+    return "Kill " $ FragLimit $ " " $ EnemyTeamName $ " in " $ TimeLimit $ " minutes to Win!";
 }
 
 defaultproperties

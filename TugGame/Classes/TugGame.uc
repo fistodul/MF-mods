@@ -108,6 +108,11 @@ function AddToTeam(int num, Pawn P)
     SetInitialTeam(P, num);
 }
 
+// The game mode is asymmetrical; never auto-balance teams
+function ReBalance()
+{
+}
+
 simulated function PreBeginPlay()
 {
     Super.PreBeginPlay();
@@ -119,9 +124,8 @@ function PostBeginPlay()
     local NavigationPoint NP;
 
     Super.PostBeginPlay();
-    bPendingRestartRound = false;
-    NumBlueSpawns = 0;
-    NumRedSpawns = 0;
+    bBalanceTeams = false;
+    bPlayersBalanceTeams = false;
 
     // collect PlayerStart actors with TeamNumber == 255 and detonation keys for everyone
     for (NP = Level.NavigationPointList; NP != None; NP = NP.nextNavigationPoint)
@@ -298,7 +302,7 @@ event Logout(Pawn Exiting)
 }
 
 // Return true if candidate is close to friendly players and far from enemies
-function bool IsForTeam(Pawn P, actor candidate)
+function bool IsForTeam(Pawn P, NavigationPoint candidate, int friendlyTarget)
 {
     local Pawn Other;
     local float UnitsAway;
@@ -312,15 +316,28 @@ function bool IsForTeam(Pawn P, actor candidate)
             continue;
 
         UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
-        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team)) {
-            if (UnitsAway < 5)
+        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team))
+        {
+            if (UnitsAway < 4.5)
                 friendlyPlayers++;
         }
         else if (UnitsAway < 1.5)
             return false;
     }
 
-    return friendlyPlayers >= Teams[P.PlayerReplicationInfo.Team].Size / 4;
+    return friendlyPlayers >= friendlyTarget;
+}
+
+function bool IsSpawnOccupied(NavigationPoint candidate)
+{
+    local Pawn Other;
+    foreach RadiusActors(Class'Pawn', Other, 70.0, candidate.Location)
+    {
+        if (Other.bCollideActors && Other.Health > 0)
+            return true;
+    }
+
+    return false;
 }
 
 // avoid the other team when picking a spawn point
@@ -330,18 +347,42 @@ function NavigationPoint PickSpawn(Pawn P)
     local NavigationPoint candidate;
 
     // attempt a few random picks
-    for (tries = 0; tries < 9; tries++)
+    for (tries = 0; tries < 6; tries++)
     {
         if (P.PlayerReplicationInfo.Team == 1)
             candidate = RedSpawns[Rand(NumRedSpawns)];
         else
             candidate = BlueSpawns[Rand(NumBlueSpawns)];
 
-        if (IsForTeam(P, candidate))
+        if (!IsSpawnOccupied(candidate) && IsForTeam(P, candidate, Teams[P.PlayerReplicationInfo.Team].Size / 4))
             return candidate;
     }
 
-    // If we couldn't find a far away spawn, return something anyway
+    // Fallback: no friendlies in the area needed
+    for (tries = 0; tries < 6; tries++)
+    {
+        if (P.PlayerReplicationInfo.Team == 1)
+            candidate = RedSpawns[Rand(NumRedSpawns)];
+        else
+            candidate = BlueSpawns[Rand(NumBlueSpawns)];
+
+        if (!IsSpawnOccupied(candidate) && IsForTeam(P, candidate, 0))
+            return candidate;
+    }
+
+    // Fallback: any unoccupied team spawn
+    for (tries = 0; tries < 5; tries++)
+    {
+        if (P.PlayerReplicationInfo.Team == 1)
+            candidate = RedSpawns[Rand(NumRedSpawns)];
+        else
+            candidate = BlueSpawns[Rand(NumBlueSpawns)];
+
+        if (!IsSpawnOccupied(candidate))
+            return candidate;
+    }
+
+    // Fallback: return something anyway
     return candidate;
 }
 
@@ -394,15 +435,12 @@ defaultproperties
      bKillTransform=True
      MeleeDistance=600
      bScoreTeamKills=False
-     GoalTeamScore=3.000000
      MaxTeamSize=32
      FragLimit=3
      TimeLimit=8
      BotConfigType=Class'TugGame.TugBotInfo'
      DefaultPlayerClass=Class'TugGame.TugPlayer'
      HUDType=Class'TugGame.TugHUD'
-     bBalanceTeams=False
-     bPlayersBalanceTeams=False
      MapPrefix="TG-"
      BeaconName="TG"
      GameName="Tug of war"
