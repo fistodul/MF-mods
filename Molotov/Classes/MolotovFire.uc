@@ -15,12 +15,7 @@ var float DamageTickTimer;
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-
     BurnDuration += FRand();
-    TimePassed = 0.0;
-    DamageTickTimer = 0.0;
-    DamageAccumulator = 0.0;
-
     SetTimer(0.1, true); // Check for damage every 0.1 seconds
 }
 
