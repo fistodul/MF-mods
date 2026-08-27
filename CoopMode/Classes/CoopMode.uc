@@ -38,11 +38,15 @@ event PlayerPawn Login
         }
 
         if (P.PlayerReplicationInfo != None)
-            P.static.SetMultiSkin(P, P.TeamSkinName, P.PlayerReplicationInfo.Team);
+        {
+            ChangeTeam(P, 1);
+            P.static.SetMultiSkin(P, P.TeamSkinName, 1);
+        }
         else
             P.static.SetMultiSkin(P, P.TeamSkinName, 0);
     }
 
+    RestartPlayer(P);
     return P;
 }
 
