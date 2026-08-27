@@ -82,7 +82,7 @@ function PostBeginPlay()
 simulated function Tick(float Delta)
 {
     local EnginePhysical Veh, XNextPhysic;
-    local Pawn P, XNextPawn;
+    local Pawn P;
     local vector Dif;
     local float Dist, MaxDist;
     local EngineBot Bot;
@@ -109,11 +109,10 @@ simulated function Tick(float Delta)
     if (BotFearC <= 0)
     {
         BotFearC = 2.25;
-        for (P = Level.PawnList; P != None; P = XNextPawn)
+        for (P = Level.PawnList; P != None; P = P.nextPawn)
         {
-            XNextPawn = P.nextPawn;
             Bot = EngineBot(P);
-            if (Bot != None)
+            if (Bot != None && !IsFriendly(P))
             {
                 Dif = Location - Bot.Location;
                 Dist = VSize(Dif);

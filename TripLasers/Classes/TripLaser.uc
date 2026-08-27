@@ -124,7 +124,7 @@ state Active
     {
         local vector HitLocation, HitNormal, Dir;
         local Actor HitA;
-        local Pawn P, XNextPawn;
+        local Pawn P;
         local float Dist;
 
         if (Owner != None && (AttachedLoc != Owner.Location || AttachedRot != Owner.Rotation))
@@ -145,9 +145,8 @@ state Active
         }
 
         // tell local bots about self
-        for (P = Level.PawnList; P != None; P = XNextPawn)
+        for (P = Level.PawnList; P != None; P = P.NextPawn)
         {
-            XNextPawn = P.NextPawn;
             if (P.IsA('EngineBot'))
             {
                 Dist = DistToLaser (P.Location);
@@ -160,17 +159,6 @@ state Active
                     break;
                 }
 
-                if (Dist < (P.CollisionRadius * 3) &&
-                    ((Level.Game.bTeamGame && (P.PlayerReplicationInfo.Team == Instigator.PlayerReplicationInfo.Team)) ||
-                    (!Level.Game.bTeamGame && P == Instigator))
-				) {
-                    // Duck our own trip bombs
-                    if (P.Location.Z >= Location.Z && P.Physics == PHYS_Walking)
-                        EngineBot(P).BigJump(P.MoveTarget);
-                    else
-                        EngineBot(P).DuckLaser(self);
-                    break;
-                }
             }
         }
     }
