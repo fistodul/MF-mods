@@ -197,7 +197,15 @@ exec function BecomeHuman()
     if (!bAdmin && (Level.Netmode != NM_Standalone))
         return;
 
-    GetZombieGame().BecomeHuman(self);
+    GetZombieGame().BecomeHuman(self, false);
+}
+
+exec function BecomeSurvivor()
+{
+    if (!bAdmin && (Level.Netmode != NM_Standalone))
+        return;
+
+    GetZombieGame().BecomeHuman(self, true);
 }
 
 exec function BecomeZombie()
@@ -205,7 +213,15 @@ exec function BecomeZombie()
     if (!bAdmin && (Level.Netmode != NM_Standalone))
         return;
 
-    GetZombieGame().BecomeZombie(self);
+    GetZombieGame().BecomeZombie(self, false);
+}
+
+exec function BecomeNemesis()
+{
+    if (!bAdmin && (Level.Netmode != NM_Standalone))
+        return;
+
+    GetZombieGame().BecomeZombie(self, true);
 }
 
 simulated function ETryLoadoutResult TryLoadoutZone()

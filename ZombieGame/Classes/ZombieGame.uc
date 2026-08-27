@@ -45,17 +45,16 @@ function bool IsMeleeItem(Inventory Inv)
 }
 
 // Detroit
-function BecomeHuman(Pawn P)
+function BecomeHuman(Pawn P, bool bIsNemesis)
 {
     local ZombiePlayer ZP;
     local ZombieBotBase ZB;
     local Pawn Other;
     local int Health;
     local float ratio;
-    local bool bIsNemesis;
 
     ratio = (Teams[1].Size + 0.5) / Max(Teams[0].Size, 1);
-    bIsNemesis = (ratio >= 5.0);
+    bIsNemesis = bIsNemesis || (ratio >= 5.0);
 
     if (bIsNemesis)
     {
@@ -106,7 +105,7 @@ function BecomeHuman(Pawn P)
 }
 
 // Buff physical prowess based on scaled defaults
-function BecomeZombie(Pawn P)
+function BecomeZombie(Pawn P, bool bIsNemesis)
 {
     local Pawn Other;
     local ZombiePlayer ZP;
@@ -116,10 +115,9 @@ function BecomeZombie(Pawn P)
     local float boost_cap;
     local float exp;
     local float ratio;
-    local bool bIsNemesis;
 
     ratio = (Teams[0].Size + 0.5) / Max(Teams[1].Size, 1);
-    bIsNemesis = (ratio >= 5.0);
+    bIsNemesis = bIsNemesis || (ratio >= 5.0);
 
     if (bIsNemesis && IsOnTeam(P, 1))
     {
@@ -373,9 +371,9 @@ function AddToTeam(int num, Pawn P)
     if (P.Health > 0)
     {
         if (num == 1)
-            BecomeZombie(P);
+            BecomeZombie(P, false);
         else
-            BecomeHuman(P);
+            BecomeHuman(P, false);
     }
 }
 
@@ -778,9 +776,9 @@ function bool RestartPlayer(pawn P)
     if (Super.RestartPlayer(P))
     {
         if (IsOnTeam(P, 1))
-            BecomeZombie(P);
+            BecomeZombie(P, false);
         else
-            BecomeHuman(P);
+            BecomeHuman(P, false);
 
         return true;
     }
