@@ -4,8 +4,6 @@
 
 class TripLaserOnGround extends TripBombOnGround;
 
-//=============================================================================
-
 var byte PlacedTeam; // Team frozen at placement time, immune to mid-game team changes
 
 // Returns true if Other is the placer, a confirmed teammate, or a non-empty vehicle with ONLY friendly occupants

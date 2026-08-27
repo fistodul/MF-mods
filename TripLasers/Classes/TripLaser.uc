@@ -65,11 +65,7 @@ function bool IsFriendly(Actor Other)
     return false;
 }
 
-//=============================================================================
-//
-//=============================================================================
-
-function Timer ()
+function Timer()
 {
     // Activate the laser
     local vector HitLocation, HitNormal, Dir;
@@ -82,7 +78,6 @@ function Timer ()
     {
         AttachedLoc = Owner.Location;
         AttachedRot = Owner.Rotation;
-        //AttachedRot.Roll += 16383;
     }
 
     // Tripwire style: fade at source end + different dot for contrast
@@ -105,8 +100,8 @@ function Timer ()
     // Skip friendlies during placement setup
     TraceStart = Location;
     AnchorTraceLoop:
-    HitA = Trace ( HitLocation, HitNormal, TraceEnd, TraceStart, true);
-    if (HitA != None && IsFriendly(HitA) && VSize(HitLocation - Location) < LaserMaxDistance )
+    HitA = Trace(HitLocation, HitNormal, TraceEnd, TraceStart, true);
+    if (IsFriendly(HitA) && VSize(HitLocation - Location) < LaserMaxDistance)
     {
         TraceStart = HitLocation + Dir * 2;
         Goto 'AnchorTraceLoop';
@@ -117,7 +112,7 @@ function Timer ()
     else
         LaserEnd = TraceEnd;
 
-    Laser.Set ( Location, LaserEnd );
+    Laser.Set(Location, LaserEnd);
 
     AmbientSound = Sound'WeaponSFX_TripBombs.Active';
     GotoState('Active');
@@ -153,7 +148,6 @@ state Active
         for (P = Level.PawnList; P != None; P = XNextPawn)
         {
             XNextPawn = P.NextPawn;
-
             if (P.IsA('EngineBot'))
             {
                 Dist = DistToLaser (P.Location);
