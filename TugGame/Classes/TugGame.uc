@@ -359,7 +359,7 @@ function NavigationPoint PickSpawn(Pawn P)
                 candidate = BlueSpawns[Rand(NumBlueSpawns)];
 
             // Fallback: any unoccupied team spawn after pass 1
-            if (!IsSpawnOccupied(candidate) && (pass > 1 || IsForTeam(P, candidate, friendlyTarget)))
+            if (IsSpawnFree(candidate) && (pass > 1 || IsForTeam(P, candidate, friendlyTarget)))
                 return candidate;
         }
     }

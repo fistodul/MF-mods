@@ -824,16 +824,16 @@ function bool IsForTeam(Pawn P, NavigationPoint candidate, int friendlyTarget)
     return friendlyPlayers >= friendlyTarget;
 }
 
-function bool IsSpawnOccupied(NavigationPoint candidate)
+function bool IsSpawnFree(NavigationPoint candidate)
 {
     local Pawn Other;
     foreach RadiusActors(Class'Pawn', Other, 70.0, candidate.Location)
     {
         if (Other.bCollideActors && Other.Health > 0)
-            return true;
+            return false;
     }
 
-    return false;
+    return true;
 }
 
 // avoid the other team when picking a spawn point
@@ -855,7 +855,7 @@ function NavigationPoint PickSpawn(Pawn P)
                 candidate = HumanSpawns[Rand(NumHumanSpawns)];
 
             // Fallback: any unoccupied team spawn after pass 1
-            if (!IsSpawnOccupied(candidate) && (pass > 1 || IsForTeam(P, candidate, friendlyTarget)))
+            if (IsSpawnFree(candidate) && (pass > 1 || IsForTeam(P, candidate, friendlyTarget)))
                 return candidate;
         }
     }
