@@ -343,43 +343,25 @@ function bool IsSpawnOccupied(NavigationPoint candidate)
 // avoid the other team when picking a spawn point
 function NavigationPoint PickSpawn(Pawn P)
 {
-    local int tries;
+    local int pass, tries, friendlyTarget;
     local NavigationPoint candidate;
 
-    // attempt a few random picks
-    for (tries = 0; tries < 6; tries++)
+    for (pass = 0; pass < 3; pass++)
     {
-        if (P.PlayerReplicationInfo.Team == 1)
-            candidate = RedSpawns[Rand(NumRedSpawns)];
-        else
-            candidate = BlueSpawns[Rand(NumBlueSpawns)];
+        // Fallback: no friendlies in the area needed after pass 0
+        friendlyTarget = (Teams[P.PlayerReplicationInfo.Team].Size / 4) * int(pass == 0);
 
-        if (!IsSpawnOccupied(candidate) && IsForTeam(P, candidate, Teams[P.PlayerReplicationInfo.Team].Size / 4))
-            return candidate;
-    }
+        for (tries = 0; tries < 6; tries++)
+        {
+            if (P.PlayerReplicationInfo.Team == 1)
+                candidate = RedSpawns[Rand(NumRedSpawns)];
+            else
+                candidate = BlueSpawns[Rand(NumBlueSpawns)];
 
-    // Fallback: no friendlies in the area needed
-    for (tries = 0; tries < 6; tries++)
-    {
-        if (P.PlayerReplicationInfo.Team == 1)
-            candidate = RedSpawns[Rand(NumRedSpawns)];
-        else
-            candidate = BlueSpawns[Rand(NumBlueSpawns)];
-
-        if (!IsSpawnOccupied(candidate) && IsForTeam(P, candidate, 0))
-            return candidate;
-    }
-
-    // Fallback: any unoccupied team spawn
-    for (tries = 0; tries < 5; tries++)
-    {
-        if (P.PlayerReplicationInfo.Team == 1)
-            candidate = RedSpawns[Rand(NumRedSpawns)];
-        else
-            candidate = BlueSpawns[Rand(NumBlueSpawns)];
-
-        if (!IsSpawnOccupied(candidate))
-            return candidate;
+            // Fallback: any unoccupied team spawn after pass 1
+            if (!IsSpawnOccupied(candidate) && (pass > 1 || IsForTeam(P, candidate, friendlyTarget)))
+                return candidate;
+        }
     }
 
     // Fallback: return something anyway
