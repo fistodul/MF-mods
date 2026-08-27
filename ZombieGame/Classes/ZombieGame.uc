@@ -47,9 +47,9 @@ function bool IsMeleeItem(Inventory Inv)
 // Detroit
 function BecomeHuman(Pawn P, bool bIsNemesis)
 {
+    local Pawn Other;
     local ZombiePlayer ZP;
     local ZombieBotBase ZB;
-    local Pawn Other;
     local int Health;
     local float ratio;
 
@@ -58,7 +58,7 @@ function BecomeHuman(Pawn P, bool bIsNemesis)
 
     if (bIsNemesis)
     {
-        Health = P.Default.Health * (ratio / 2.5);
+        Health = P.Default.Health * FMax(ratio / 2.5, 1);
         for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
             Other.ClientMessage(P.PlayerReplicationInfo.PlayerName $ " is a SURVIVOR!");
     }
@@ -110,7 +110,6 @@ function BecomeZombie(Pawn P, bool bIsNemesis)
     local Pawn Other;
     local ZombiePlayer ZP;
     local ZombieBotBase ZB;
-    local ZombieReplicationInfo ZRI;
     local float boost;
     local float boost_cap;
     local float exp;
@@ -121,16 +120,15 @@ function BecomeZombie(Pawn P, bool bIsNemesis)
 
     if (bIsNemesis && IsOnTeam(P, 1))
     {
-        ZRI = ZombieReplicationInfo(GameReplicationInfo);
-        exp = FMax(zBiasExp, 0.25);
-        boost_cap = 15;
+        exp = FMax(zBiasExp, 0.24);
+        boost_cap = 10;
 
         for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
             Other.ClientMessage(P.PlayerReplicationInfo.PlayerName $ " is a NEMESIS!");
 
         // Can't cheat death while a nemesis is alive
         bZombieInfect = false;
-        ZRI.bZombieInfect = false;
+        ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = false;
     }
     else
     {
@@ -144,7 +142,7 @@ function BecomeZombie(Pawn P, bool bIsNemesis)
         1.0, boost_cap
     );
 
-    P.BaseGroundSpeed = FMin(P.Default.BaseGroundSpeed * 1.55 * boost, 880.0);
+    P.BaseGroundSpeed = P.Default.BaseGroundSpeed * FMin(1.55 * boost, 2.2);
     P.Health = P.Default.Health * 3.33 * boost;
 
     if (ZP != None)
@@ -165,9 +163,9 @@ function BecomeZombie(Pawn P, bool bIsNemesis)
         P.MaxCarry = P.Default.MaxCarry - 2;
     }
 
-    P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5 * FMin(boost, 1.7);
+    P.FallDamageThreshold = P.Default.FallDamageThreshold * FMin(1.5 * boost, 2.55);
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5 * boost;
-    P.JumpZ = FMin(P.Default.JumpZ * 1.45 * boost, 975.0);
+    P.JumpZ = P.Default.JumpZ * FMin(1.45 * boost, 3.0);
 
     P.GroundSpeed = P.BaseGroundSpeed - 80;
     P.WaterSpeed = P.Default.WaterSpeed * 2;
@@ -186,6 +184,19 @@ function BecomeZombie(Pawn P, bool bIsNemesis)
     // Feel the hunger in your hands
     P.PendingWeapon = Weapon(P.FindInventoryType(Class'ZombieKnife'));
     P.ChangedWeapon();
+}
+
+function bool IsNemesis(Pawn P)
+{
+    local ZombiePlayer ZP;
+    local ZombieBotBase ZB;
+    ZP = ZombiePlayer(P);
+    ZB = ZombieBotBase(P);
+
+    if (ZP != None && ZP.bIsNemesis || ZB != None && ZB.bIsNemesis)
+        return true;
+
+    return false;
 }
 
 function TransformItem(Inventory Inv, string NewInv)
@@ -492,7 +503,6 @@ function MovedTeam(Pawn Instigator, Pawn Other)
 function bool IsTeamDead(int num)
 {
     local Pawn P;
-
     for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
         if (
@@ -508,26 +518,29 @@ function bool IsTeamDead(int num)
     return true;
 }
 
-function PutPlayerToSpectate(RagePlayer RP)
+function bool DidTeamScore(int num)
 {
-    local name BackupRestartState;
-
-    if (RP == None)
-        return;
-
-    ResetBotsAI(RP);
-    if (Level.NetMode != NM_Standalone)
+    local Pawn P;
+    for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
-        BackupRestartState = RP.PlayerRestartState;
-        RP.PlayerRestartState = 'PlayerWalking';
-        RP.StartWalk();
-        RP.PlayerRestartState = BackupRestartState;
+        if (
+            P.PlayerReplicationInfo != None &&
+            P.PlayerReplicationInfo.Team == num &&
+            P.PlayerReplicationInfo.Score > 0
+        )
+            return true;
     }
 
-    RP.GotoState('playerWaiting');
-    RP.bProjTarget = false;
-    RP.SetCollision(false, false, false);
+    return false;
+}
 
+function PutPlayerToSpectate(RagePlayer RP)
+{
+    ResetBotsAI(RP);
+    if (Level.NetMode != NM_Standalone)
+        RP.StartWalk();
+
+    RP.GotoState('playerWaiting');
     if (RP.bIsWalking && RP.Weapon != None)
         RP.Weapon.PutDown();
 }
@@ -562,7 +575,7 @@ function Killed(pawn killer, pawn victim, name damageType)
     if (!IsOnTeam(victim, 1))
     {
         // Don't let the last human cheat death...
-        if (Teams[1].Size > 0 && IsTeamDead(0))
+        if (IsTeamDead(0) && (DidTeamScore(1) || IsNemesis(victim)))
         {
             RoundEnded(1);
             return;
@@ -594,7 +607,7 @@ function Killed(pawn killer, pawn victim, name damageType)
         }
 
         // Send the human player to spectate next tick during Nemesis mode
-        if (!bZombieInfect)
+        if (bZombieInfect != bZombieInfectSaved)
             humanPlayerRef = RagePlayer(victim);
     }
 }
@@ -625,13 +638,13 @@ function ProcessRegeneration(float Delta)
 
     for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
-        if (P.Health <= 0 || P.PlayerReplicationInfo == None || IsOnTeam(P, 1))
+        if (P.Health <= 0 || !IsNemesis(P))
             continue;
 
         ZP = ZombiePlayer(P);
         ZB = ZombieBotBase(P);
 
-        if (ZP != None && ZP.bIsNemesis && ZP.Health < ZP.MaxHealth)
+        if (ZP != None && ZP.Health < ZP.MaxHealth)
         {
             ZP.regenerationAccumulator += ZP.regenerationRate * Delta;
             if (ZP.regenerationAccumulator >= 1.0)
@@ -641,7 +654,7 @@ function ProcessRegeneration(float Delta)
                 ZP.Health = Min(ZP.Health + healAmount, ZP.MaxHealth);
             }
         }
-        else if (ZB != None && ZB.bIsNemesis && ZB.Health < ZB.MaxHealth)
+        else if (ZB != None && ZB.Health < ZB.MaxHealth)
         {
             ZB.regenerationAccumulator += ZB.regenerationRate * Delta;
             if (ZB.regenerationAccumulator >= 1.0)
@@ -675,7 +688,6 @@ function RestartRound()
 {
     local Pawn P, NextP;
     local ZombieBotBase ZB;
-    local ZombieReplicationInfo ZRI;
     local EnginePhysical Phys, NextPhys;
     local Vehicle V;
     local TripBomb TB;
@@ -685,11 +697,10 @@ function RestartRound()
     RemainingTime = TimeLimit * 60;
     GameReplicationInfo.RemainingTime = RemainingTime;
     GameReplicationInfo.RemainingMinute = RemainingTime;
-    ZRI = ZombieReplicationInfo(GameReplicationInfo);
 
     // Reset nemesis state between rounds
     bZombieInfect = bZombieInfectSaved;
-    ZRI.bZombieInfect = bZombieInfectSaved;
+    ZombieReplicationInfo(GameReplicationInfo).bZombieInfect = bZombieInfectSaved;
     humanPlayerRef = None;
 
     // Destroy vehicles, wheels and trip bombs
@@ -768,8 +779,8 @@ event Logout(Pawn Exiting)
 // Applies buffs based on the game state at the time of respawn
 function bool RestartPlayer(pawn P)
 {
-    // During mid-round Nemesis mode, dead humans do not respawn until round restart
-    if (!bRestartingRound && !bZombieInfect && !IsOnTeam(P, 1))
+    // During Nemesis mode, dead humans do not respawn until round restart
+    if (!bRestartingRound && bZombieInfect != bZombieInfectSaved && !IsOnTeam(P, 1))
         return false;
 
     if (Super.RestartPlayer(P))
