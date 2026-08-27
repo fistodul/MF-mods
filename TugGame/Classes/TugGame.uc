@@ -209,7 +209,6 @@ function RoundEnded(int Winner)
     }
 
     Teams[Winner].Score += 1;
-
     if (Teams[Winner].Score >= FragLimit)
         Super.EndGame("fraglimit");
     else
