@@ -167,7 +167,7 @@ function BecomeZombie(Pawn P)
         P.MaxCarry = P.Default.MaxCarry - 2;
     }
 
-    P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5;
+    P.FallDamageThreshold = P.Default.FallDamageThreshold * 1.5 * FMin(boost, 1.7);
     P.FallDeathThreshold = P.Default.FallDeathThreshold * 1.5 * boost;
     P.JumpZ = FMin(P.Default.JumpZ * 1.45 * boost, 975.0);
 
