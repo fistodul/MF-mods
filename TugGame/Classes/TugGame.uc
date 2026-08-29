@@ -301,7 +301,7 @@ event Logout(Pawn Exiting)
 }
 
 // Return true if candidate is close to friendly players and far from enemies
-function bool IsForTeam(Pawn P, NavigationPoint candidate, int friendlyTarget)
+function bool IsForTeam(PlayerReplicationInfo PRI, NavigationPoint candidate, int friendlyTarget)
 {
     local Pawn Other;
     local float UnitsAway;
@@ -311,11 +311,11 @@ function bool IsForTeam(Pawn P, NavigationPoint candidate, int friendlyTarget)
     for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
     {
         // Prevents counting self and vehicles etc
-        if (Other.PlayerReplicationInfo == None || Other == P)
+        if (Other.Health <= 0 || Other.PlayerReplicationInfo == None || Other.PlayerReplicationInfo == PRI)
             continue;
 
         UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
-        if (IsOnTeam(Other, P.PlayerReplicationInfo.Team))
+        if (IsOnTeam(Other, PRI.Team))
         {
             if (UnitsAway < 4.5)
                 friendlyPlayers++;
@@ -340,25 +340,26 @@ function bool IsSpawnFree(NavigationPoint candidate)
 }
 
 // avoid the other team when picking a spawn point
-function NavigationPoint PickSpawn(Pawn P)
+function NavigationPoint PickSpawn(PlayerReplicationInfo PRI)
 {
     local int pass, tries, friendlyTarget;
     local NavigationPoint candidate;
+    friendlyTarget = Teams[PRI.Team].Size / 4;
 
     for (pass = 0; pass < 3; pass++)
     {
         // Fallback: no friendlies in the area needed after pass 0
-        friendlyTarget = (Teams[P.PlayerReplicationInfo.Team].Size / 4) * int(pass == 0);
+        friendlyTarget *= int(pass == 0);
 
         for (tries = 0; tries < 6; tries++)
         {
-            if (P.PlayerReplicationInfo.Team == 1)
+            if (PRI.Team == 1)
                 candidate = RedSpawns[Rand(NumRedSpawns)];
             else
                 candidate = BlueSpawns[Rand(NumBlueSpawns)];
 
             // Fallback: any unoccupied team spawn after pass 1
-            if (IsSpawnFree(candidate) && (pass > 1 || IsForTeam(P, candidate, friendlyTarget)))
+            if (IsSpawnFree(candidate) && (pass > 1 || IsForTeam(PRI, candidate, friendlyTarget)))
                 return candidate;
         }
     }
@@ -370,7 +371,7 @@ function NavigationPoint PickSpawn(Pawn P)
 function NavigationPoint FindPlayerStart(Pawn P, optional byte InTeam, optional string incomingName)
 {
     if (bSpawnAnywhere && P != None && P.PlayerReplicationInfo != None)
-        return PickSpawn(P);
+        return PickSpawn(P.PlayerReplicationInfo);
 
     // fallback to normal behavior
     return Super.FindPlayerStart(P, InTeam, incomingName);
