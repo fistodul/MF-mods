@@ -27,7 +27,7 @@ function bool AddInventory(inventory NewItem)
     if (bIsNemesis && PlayerReplicationInfo.Team != 1)
     {
         RW = RageWeapon(NewItem);
-        if (RW != None && RW.MaxClips > 1)
+        if (RW != None && (RW.MaxClips > 1 || RW.MaxClipAmmo > 1))
         {
             RW.MaxClipAmmo = 9999;
             RW.GiveFullAmmo();
