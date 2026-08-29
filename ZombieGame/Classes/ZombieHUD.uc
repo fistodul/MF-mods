@@ -1,5 +1,7 @@
 class ZombieHUD extends RageTeamHUD;
 
+var() color HumanOutlineColor;
+
 simulated function DrawHealth(canvas Canvas, int sX, int sY)
 {
     local int RenderHeight;
@@ -187,7 +189,112 @@ simulated function DrawInventory(canvas Canvas, int sX, int sY)
         DrawEmptyIcon(Canvas, LeftToDraw, sX + CurX, sY);
 }
 
+simulated function DrawBox(canvas Canvas, float X, float Y, float W, float H)
+{
+    Canvas.SetPos(X, Y);
+    Canvas.DrawTile(Texture'Rage.ScoreBoxes', W, H, 10, 100, 1, 1);
+}
+
+simulated function DrawNearestHumanOutline(canvas Canvas)
+{
+    local Pawn P, Target;
+    local float MinDist, Dist, Proj, Scale, TanHalfFOV;
+    local float CX, CY, W, H, L, X1, X2, Y1, Y2, TW, TH;
+    local vector CamLoc, Rel;
+    local rotator CamRot;
+    local string S;
+
+    if (TeamIndex() != 1 || RagePlayerOwner.Health <= 0)
+        return;
+
+    if (PlayerOwner.ViewTarget != None)
+    {
+        CamLoc = PlayerOwner.ViewTarget.Location;
+        CamRot = PlayerOwner.ViewTarget.Rotation;
+    }
+    else
+    {
+        CamLoc = PlayerOwner.Location + vect(0,0,1) * PlayerOwner.EyeHeight;
+        CamRot = PlayerOwner.ViewRotation;
+    }
+
+    MinDist = 999999.0;
+    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    {
+        if (P != PlayerOwner && P != PlayerOwner.ViewTarget && P.Health > 0 && P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.Team == 0)
+        {
+            Dist = VSize(P.Location - CamLoc);
+            if (Dist < MinDist)
+            {
+                MinDist = Dist;
+                Target = P;
+            }
+        }
+    }
+
+    if (Target == None)
+        return;
+
+    Rel = (Target.Location - CamLoc) << CamRot;
+    TanHalfFOV = Tan(FMax(PlayerOwner.DesiredFOV, PlayerOwner.DefaultFOV) * 0.008726646);
+    Proj = (Canvas.ClipX * 0.5) / FMax(TanHalfFOV, 0.001);
+
+    Canvas.Style = ERenderStyle.STY_Translucent;
+    Canvas.DrawColor = HumanOutlineColor;
+    Canvas.Font = MyFonts.GetSmallFont(Canvas.ClipX);
+    S = int(MinDist / 50.0) $ "m";
+
+    if (Rel.X > 1.0)
+    {
+        CX = (Canvas.ClipX * 0.5) + (Rel.Y / Rel.X) * Proj;
+        CY = (Canvas.ClipY * 0.5) - (Rel.Z / Rel.X) * Proj;
+        H = FClamp((Target.CollisionHeight * 2.2 / Rel.X) * Proj, 14.0, Canvas.ClipY * 0.8);
+        W = FClamp(H * 0.5, 10.0, Canvas.ClipX * 0.8);
+        X1 = CX - W * 0.5;  X2 = CX + W * 0.5;
+        Y1 = CY - H * 0.5;  Y2 = CY + H * 0.5;
+
+        if (X2 >= 0 && X1 <= Canvas.ClipX && Y2 >= 0 && Y1 <= Canvas.ClipY)
+        {
+            L = FClamp(FMin(W, H) * 0.3, 4.0, 16.0);
+            DrawBox(Canvas, X1, Y1, L, 2); DrawBox(Canvas, X1, Y1, 2, L);
+            DrawBox(Canvas, X2 - L, Y1, L, 2); DrawBox(Canvas, X2 - 2, Y1, 2, L);
+            DrawBox(Canvas, X1, Y2 - 2, L, 2); DrawBox(Canvas, X1, Y2 - L, 2, L);
+            DrawBox(Canvas, X2 - L, Y2 - 2, L, 2); DrawBox(Canvas, X2 - 2, Y2 - L, 2, L);
+            DrawBox(Canvas, CX - 1, CY - 1, 3, 3);
+
+            Canvas.TextSize(S, TW, TH);
+            Canvas.SetPos(CX - TW * 0.5, Y2 + 2);
+            Canvas.DrawText(S, false);
+            return;
+        }
+    }
+
+    // Off-screen indicator clamped to border
+    CX = Canvas.ClipX * 0.5;
+    CY = Canvas.ClipY * 0.5;
+    Rel.Z = -Rel.Z;
+
+    if (Rel.X <= 1.0)
+        Rel.Z = (int(Rel.Z >= 0) * 2 - 1) * FMax(Abs(Rel.Y), 1.0);
+
+    Scale = Sqrt(Rel.Y * Rel.Y + Rel.Z * Rel.Z);
+    X1 = CX + (Rel.Y / Scale) * (CX - 48);
+    Y1 = CY + (Rel.Z / Scale) * (CY - 48);
+
+    DrawBox(Canvas, X1 - 4, Y1 - 4, 8, 8);
+    Canvas.TextSize(S, TW, TH);
+    Canvas.SetPos(X1 - TW * 0.5, Y1 + 6);
+    Canvas.DrawText(S, false);
+}
+
+simulated function PostRender(canvas Canvas)
+{
+    Super.PostRender(Canvas);
+    DrawNearestHumanOutline(Canvas);
+}
+
 defaultproperties
 {
+     HumanOutlineColor=(R=0,G=160,B=255,A=255)
      ScoreIcons(2)=(X=128,Y=128,W=64,H=64,t=Texture'Rage.ScoreIcons')
 }
