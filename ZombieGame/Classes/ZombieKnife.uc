@@ -64,6 +64,23 @@ state AltFiring
     }
 }
 
+// Accumulate ThrowPower locally so the HUD gauge works in multiplayer
+state ClientFirePowerUp
+{
+    simulated function Tick(float Delta)
+    {
+        ThrowPower += Delta * 8;
+        if (ThrowPower > 10)
+            ThrowPower = 10;
+
+        if (Pawn(Owner).bAltFire == 0)
+        {
+            ThrowPower = 0;
+            GotoState('ClientAltFiring');
+        }
+    }
+}
+
 simulated function PostRender(canvas Canvas)
 {
     Super.PostRender(Canvas);
@@ -82,7 +99,7 @@ function float RateSelf(out int bUseAltMode)
         return -2.0;
 
     P = Pawn(Owner);
-    bEnemyInVehicle = (P.Enemy.VehicleIn != None || P.Enemy.IsA('Vehicle'));
+    bEnemyInVehicle = P.Enemy != None && (P.Enemy.VehicleIn != None || P.Enemy.IsA('Vehicle'));
 
     if (bEnemyInVehicle) // throw knife to blow up vehicle
     {
