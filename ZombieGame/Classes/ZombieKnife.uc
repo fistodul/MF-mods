@@ -56,12 +56,6 @@ state AltFiring
             Pawn(Owner).PlayAltFiring();
         }
     }
-
-    function AnimEnd()
-    {
-        Finish();
-        Disable('AnimEnd');
-    }
 }
 
 // Accumulate ThrowPower locally so the HUD gauge works in multiplayer
@@ -156,7 +150,7 @@ function ThrowKnife()
     local ZombieKnife_Thrown TKnife; // kept track of so it can be collected
 
     GetAxes(Pawn(Owner).ViewRotation, X, Y, Z);
-    ProjectileSpeed = 1000.0 + (FClamp(ThrowPower, 0.0, 10.0) * FClamp(ThrowPower, 0.0, 10.0)) * 15.0; // 1000 (tap) -> 2500 (full charge)
+    ProjectileSpeed = 1000.0 + (ThrowPower ** 2) * 15.0; // 1000 (tap) -> 2500 (full charge)
 
     TKnife = ZombieKnife_Thrown(ProjectileFire(ProjectileClass, ProjectileSpeed, bAltWarnTarget));
     TKnife.OwnerKnife = self;
