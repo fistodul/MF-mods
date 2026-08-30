@@ -192,36 +192,26 @@ simulated function DrawInventory(canvas Canvas, int sX, int sY)
 simulated function DrawBox(canvas Canvas, float X, float Y, float W, float H)
 {
     Canvas.SetPos(X, Y);
-    Canvas.DrawTile(Texture'Rage.ScoreBoxes', W, H, 10, 100, 1, 1);
+    Canvas.DrawTile(Texture'Engine.WhiteTexture', W, H, 0, 0, 1, 1);
 }
 
 simulated function DrawNearestHumanOutline(canvas Canvas)
 {
     local Pawn P, Target;
-    local float MinDist, Dist, Proj, Scale, TanHalfFOV;
-    local float CX, CY, W, H, L, X1, X2, Y1, Y2, TW, TH;
+    local float MinDist, Dist, Proj, Scale, CX, CY, W, H, L, X1, Y1, X2, Y2, TW, TH, DirX, DirY;
     local vector CamLoc, Rel;
-    local rotator CamRot;
     local string S;
 
     if (TeamIndex() != 1 || RagePlayerOwner.Health <= 0)
         return;
 
-    if (PlayerOwner.ViewTarget != None)
-    {
-        CamLoc = PlayerOwner.ViewTarget.Location;
-        CamRot = PlayerOwner.ViewTarget.Rotation;
-    }
-    else
-    {
-        CamLoc = PlayerOwner.Location + vect(0,0,1) * PlayerOwner.EyeHeight;
-        CamRot = PlayerOwner.ViewRotation;
-    }
+    // ViewRotation is always the actual camera direction (correct in vehicles and bBehindView).
+    CamLoc = PlayerOwner.Location + vect(0,0,1) * PlayerOwner.EyeHeight;
 
-    MinDist = 999999.0;
-    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    MinDist = 25000.0;
+    foreach AllActors(class'Pawn', P)
     {
-        if (P != PlayerOwner && P != PlayerOwner.ViewTarget && P.Health > 0 && P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.Team == 0)
+        if (P != PlayerOwner && P.Health > 0 && P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.Team == 0)
         {
             Dist = VSize(P.Location - CamLoc);
             if (Dist < MinDist)
@@ -235,16 +225,16 @@ simulated function DrawNearestHumanOutline(canvas Canvas)
     if (Target == None)
         return;
 
-    Rel = (Target.Location - CamLoc) << CamRot;
-    TanHalfFOV = Tan(FMax(PlayerOwner.DesiredFOV, PlayerOwner.DefaultFOV) * 0.008726646);
-    Proj = (Canvas.ClipX * 0.5) / FMax(TanHalfFOV, 0.001);
+    Rel = (Target.Location - CamLoc) << PlayerOwner.ViewRotation;
+    Proj = (Canvas.ClipX * 0.5) / FMax(Tan(FMax(PlayerOwner.DesiredFOV, PlayerOwner.DefaultFOV) * 0.008726646), 0.001);
 
     Canvas.Style = ERenderStyle.STY_Translucent;
     Canvas.DrawColor = HumanOutlineColor;
     Canvas.Font = MyFonts.GetSmallFont(Canvas.ClipX);
     S = int(MinDist / 50.0) $ "m";
 
-    if (Rel.X > 1.0)
+    // In bBehindView (vehicle) the camera is offset behind the pawn, making on-screen projection unreliable
+    if (!PlayerOwner.bBehindView && Rel.X > 1.0)
     {
         CX = (Canvas.ClipX * 0.5) + (Rel.Y / Rel.X) * Proj;
         CY = (Canvas.ClipY * 0.5) - (Rel.Z / Rel.X) * Proj;
@@ -262,9 +252,13 @@ simulated function DrawNearestHumanOutline(canvas Canvas)
             DrawBox(Canvas, X2 - L, Y2 - 2, L, 2); DrawBox(Canvas, X2 - 2, Y2 - L, 2, L);
             DrawBox(Canvas, CX - 1, CY - 1, 3, 3);
 
-            Canvas.TextSize(S, TW, TH);
-            Canvas.SetPos(CX - TW * 0.5, Y2 + 2);
-            Canvas.DrawText(S, false);
+            if (MinDist < 15000)
+            {
+                Canvas.TextSize(S, TW, TH);
+                Canvas.SetPos(CX - TW * 0.5, Y2 + 2);
+                Canvas.DrawText(S, false);
+            }
+
             return;
         }
     }
@@ -272,19 +266,24 @@ simulated function DrawNearestHumanOutline(canvas Canvas)
     // Off-screen indicator clamped to border
     CX = Canvas.ClipX * 0.5;
     CY = Canvas.ClipY * 0.5;
-    Rel.Z = -Rel.Z;
+    DirX = Rel.Y;
 
-    if (Rel.X <= 1.0)
-        Rel.Z = (int(Rel.Z >= 0) * 2 - 1) * FMax(Abs(Rel.Y), 1.0);
+    if (Rel.X >= 0.0)
+        DirY = -Rel.Z;
+    else
+        DirY = -Rel.X;
 
-    Scale = Sqrt(Rel.Y * Rel.Y + Rel.Z * Rel.Z);
-    X1 = CX + (Rel.Y / Scale) * (CX - 48);
-    Y1 = CY + (Rel.Z / Scale) * (CY - 48);
+    Scale = FMin((CX - 32.0) / FMax(Abs(DirX), 0.001), (CY - 32.0) / FMax(Abs(DirY), 0.001));
+    X1 = CX + DirX * Scale;
+    Y1 = CY + DirY * Scale;
 
     DrawBox(Canvas, X1 - 4, Y1 - 4, 8, 8);
-    Canvas.TextSize(S, TW, TH);
-    Canvas.SetPos(X1 - TW * 0.5, Y1 + 6);
-    Canvas.DrawText(S, false);
+    if (MinDist < 15000)
+    {
+        Canvas.TextSize(S, TW, TH);
+        Canvas.SetPos(X1 - TW * 0.5, Y1 + 6);
+        Canvas.DrawText(S, false);
+    }
 }
 
 simulated function PostRender(canvas Canvas)

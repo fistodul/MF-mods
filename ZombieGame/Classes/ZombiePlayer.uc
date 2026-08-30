@@ -301,6 +301,7 @@ state PlayerWalking
 
 defaultproperties
 {
+     bAlwaysRelevant=True
      bIsNemesis=False
      regenerationRate=1.500000
      MaxCarry=6
