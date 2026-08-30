@@ -822,10 +822,10 @@ function bool IsForTeam(PlayerReplicationInfo PRI, NavigationPoint candidate, in
         UnitsAway = VSize(Other.Location - candidate.Location) / MeleeDistance;
         if (IsOnTeam(Other, PRI.Team))
         {
-            if (UnitsAway < 4.5)
+            if (UnitsAway < 5)
                 friendlyPlayers++;
         }
-        else if (UnitsAway < 1.5)
+        else if (UnitsAway <= 1.5)
             return false;
     }
 
