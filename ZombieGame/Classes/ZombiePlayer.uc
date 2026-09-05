@@ -10,7 +10,7 @@ var float regenerationAccumulator;
 replication
 {
     reliable if (Role < ROLE_Authority)
-        BecomeHuman, BecomeZombie, RunAs, SetTo, SetToLooking, GetTo, GetToLooking, Teleport;
+        BecomeHuman, BecomeZombie, BecomeSurvivor, BecomeNemesis, RunAs, SetTo, SetToLooking, GetTo, GetToLooking, Teleport;
     reliable if (Role == ROLE_Authority)
         MaxHealth, MaxCarry;
 }
