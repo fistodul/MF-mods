@@ -629,12 +629,43 @@ function RoundEnded(int Winner)
         bPendingRestartRound = true;
 }
 
+function RegenerateTarget(Pawn P, out float Accumulator, float Rate, int MaxH, float Delta)
+{
+    local Inventory Inv;
+    local RageArmour RA;
+    local int healAmount;
+
+    if (P.Health >= MaxH)
+    {
+        for (Inv = P.Inventory; Inv != None; Inv = Inv.Inventory)
+        {
+            RA = RageArmour(Inv);
+            if (RA != None)
+                break;
+        }
+
+        if (RA == None || RA.Charge >= RA.Default.Charge)
+            return;
+    }
+
+    Accumulator += Rate * Delta;
+    if (Accumulator >= 1.0)
+    {
+        healAmount = int(Accumulator);
+        Accumulator -= healAmount;
+
+        if (P.Health < MaxH)
+            P.Health = Min(P.Health + healAmount, MaxH);
+        else
+            RA.Charge = Min(RA.Charge + healAmount, RA.Default.Charge);
+    }
+}
+
 function ProcessRegeneration(float Delta)
 {
     local Pawn P;
     local ZombiePlayer ZP;
     local ZombieBotBase ZB;
-    local int healAmount;
 
     for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
@@ -644,26 +675,10 @@ function ProcessRegeneration(float Delta)
         ZP = ZombiePlayer(P);
         ZB = ZombieBotBase(P);
 
-        if (ZP != None && ZP.Health < ZP.MaxHealth)
-        {
-            ZP.regenerationAccumulator += ZP.regenerationRate * Delta;
-            if (ZP.regenerationAccumulator >= 1.0)
-            {
-                healAmount = int(ZP.regenerationAccumulator);
-                ZP.regenerationAccumulator -= healAmount;
-                ZP.Health = Min(ZP.Health + healAmount, ZP.MaxHealth);
-            }
-        }
-        else if (ZB != None && ZB.Health < ZB.MaxHealth)
-        {
-            ZB.regenerationAccumulator += ZB.regenerationRate * Delta;
-            if (ZB.regenerationAccumulator >= 1.0)
-            {
-                healAmount = int(ZB.regenerationAccumulator);
-                ZB.regenerationAccumulator -= healAmount;
-                ZB.Health = Min(ZB.Health + healAmount, ZB.MaxHealth);
-            }
-        }
+        if (ZP != None)
+            RegenerateTarget(ZP, ZP.regenerationAccumulator, ZP.regenerationRate, ZP.MaxHealth, Delta);
+        else if (ZB != None)
+            RegenerateTarget(ZB, ZB.regenerationAccumulator, ZB.regenerationRate, ZB.MaxHealth, Delta);
     }
 }
 
