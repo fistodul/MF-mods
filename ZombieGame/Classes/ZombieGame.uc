@@ -226,13 +226,13 @@ function TransformToHumanItems(Pawn P)
         switch (Inv.Class)
         {
             case Class'ZombieKnife':
-                TransformItem(Inv, "RageGame.RageKnife");
+                TransformItem(Inv, "RageWeapons.RageKnife");
                 break;
             case Class'AdrenalineShot':
                 TransformItem(Inv, "ZombieGame.ZombieShot");
                 break;
             case Class'ZombieArmour':
-                TransformItem(Inv, "RageGame.RageArmour");
+                TransformItem(Inv, "RageWeapons.RageArmour");
                 break;
         }
     }
