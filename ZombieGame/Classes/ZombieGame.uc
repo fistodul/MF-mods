@@ -283,13 +283,12 @@ function GiveMelee(Pawn P)
     }
 }
 
-// Return false if candidate is too close to a spawn of the given team
-function bool IsSpawnFarEnough(NavigationPoint candidate, int team)
+function bool IsFarFromBases(Vector Loc)
 {
     local PlayerStart PS;
-    foreach RadiusActors(Class'PlayerStart', PS, MeleeDistance * 2, candidate.Location)
+    foreach RadiusActors(Class'PlayerStart', PS, MeleeDistance * 2, Loc)
     {
-        if (PS.TeamNumber == team)
+        if (PS.TeamNumber != 255)
             return false;
     }
 
@@ -430,7 +429,7 @@ function PostBeginPlay()
         {
             if (PS.TeamNumber == 255)
             {
-                if (IsSpawnFarEnough(PS, 0) && IsSpawnFarEnough(PS, 1))
+                if (IsFarFromBases(PS.Location))
                     AddZombieSpawn(PS);
             }
             else
