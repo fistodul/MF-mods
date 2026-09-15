@@ -18,3 +18,4 @@ MobileForces*.ico
 !TripLasers/**/*.uc
 !TugGame/**/*.uc
 !ZombieGame/**/*.uc
+!KOH/**/*.uc
