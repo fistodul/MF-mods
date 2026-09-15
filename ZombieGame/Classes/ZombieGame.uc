@@ -58,7 +58,7 @@ function BecomeHuman(Pawn P, bool bIsNemesis)
 
     if (bIsNemesis)
     {
-        Health = P.Default.Health * FMax(ratio / 2.5, 1);
+        Health = P.Default.Health * FMax(ratio / 2.5, 2);
         for (Other = Level.PawnList; Other != None; Other = Other.NextPawn)
             Other.ClientMessage(P.PlayerReplicationInfo.PlayerName $ " is a SURVIVOR!");
     }
