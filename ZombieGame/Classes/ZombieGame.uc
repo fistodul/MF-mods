@@ -656,7 +656,7 @@ function RegenerateTarget(Pawn P, out float Accumulator, float Rate, int MaxH, f
         if (P.Health < MaxH)
             P.Health = Min(P.Health + healAmount, MaxH);
         else
-            RA.Charge = Min(RA.Charge + healAmount, RA.Default.Charge);
+            RA.Charge = Min(RA.Charge + healAmount * 2, RA.Default.Charge);
     }
 }
 
