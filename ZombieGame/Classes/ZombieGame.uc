@@ -234,6 +234,9 @@ function TransformToHumanItems(Pawn P)
             case Class'ZombieArmour':
                 TransformItem(Inv, "RageWeapons.RageArmour");
                 break;
+            case Class'Shotgun':
+                TransformItem(Inv, "ZombieGame.ZombieShotgun");
+                break;
         }
     }
 }
@@ -255,6 +258,9 @@ function TransformToZombieItems(Pawn P)
                 break;
             case Class'RageArmour':
                 TransformItem(Inv, "ZombieGame.ZombieArmour");
+                break;
+            case Class'Shotgun':
+                TransformItem(Inv, "ZombieGame.ZombieShotgun");
                 break;
         }
     }

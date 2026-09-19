@@ -15,6 +15,7 @@ MobileForces*.ico
 *.uc
 !CoopMode/**/*.uc
 !Molotov/**/*.uc
+!SeekerMines/**/*.uc
 !TripLasers/**/*.uc
 !TugGame/**/*.uc
 !ZombieGame/**/*.uc
