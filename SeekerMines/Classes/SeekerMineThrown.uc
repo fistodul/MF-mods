@@ -8,7 +8,6 @@ var bool bDeployed;
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-    // Arm and deploy in mid-air
     SetTimer(0.5, false);
 }
 
@@ -17,7 +16,7 @@ function Timer()
     DeployMine();
 }
 
-function DeployMine()
+simulated function DeployMine()
 {
     local SeekerMine Mine;
 

@@ -3,6 +3,8 @@
 //=============================================================================
 class SeekerMines extends TripBombs;
 
+var int MaxActiveMines;
+
 // Redirect primary fire to alt-fire (throw) so both buttons do the same thing.
 function Fire(float Value)
 {
@@ -46,10 +48,31 @@ state ClientFirePowerUp
     }
 }
 
+function int CountActiveMines()
+{
+    local Pawn P;
+    local SeekerMine Mine;
+    local int Count;
+
+    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    {
+        Mine = SeekerMine(P);
+        if (Mine != None && Mine.Placer == Owner)
+            Count++;
+    }
+    return Count;
+}
+
 // Launch a SeekerMineThrown instead of TripBombThrown, with higher base velocity.
 function ThrowTripBomb()
 {
     local vector X, Y, Z;
+
+    if (CountActiveMines() >= MaxActiveMines)
+    {
+        Pawn(Owner).ClientMessage("Max active Seeker Mines reached: " $ MaxActiveMines);
+        return;
+    }
 
     UseAmmo(1);
     GetAxes(Pawn(Owner).ViewRotation, X, Y, Z);
@@ -84,6 +107,7 @@ simulated function ClientFinish()
 
 defaultproperties
 {
+     MaxActiveMines=3
      MaxClipAmmo=1
      PickupMessage="Loaded up Seeker Mines."
      ItemName="Seeker Mine"

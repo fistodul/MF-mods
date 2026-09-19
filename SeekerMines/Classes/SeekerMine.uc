@@ -75,10 +75,20 @@ function bool IsPawnFriendly(Pawn P)
 function bool IsFriendly(Actor Other)
 {
     local Vehicle V;
+    local SeekerMine OtherMine;
     local int i;
 
-    if (Other == None || Other == Self || Other == Placer || Other.IsA('SeekerMine'))
+    if (Other == None || Other == Self || Other == Placer)
         return true;
+
+    // Enemy seeker mines should blow each other up
+    OtherMine = SeekerMine(Other);
+    if (OtherMine != None)
+    {
+        if (Level.Game.bTeamGame)
+            return OtherMine.PlacedTeam == PlacedTeam;
+        return OtherMine.Placer == Placer;
+    }
 
     V = Vehicle(Other);
     if (V != None)
@@ -150,7 +160,7 @@ function BlowUp()
     bDetonated = true;
     ExplodeLoc = Location + vect(0,0,16);
 
-    HurtRadius(Damage, DamageRadius, 'RageWeaponsDOTTripBombs', 75000, ExplodeLoc);
+    HurtRadius(Damage, DamageRadius, 'RageWeaponsDOTTripBombs', 70000, ExplodeLoc);
     MakeNoise(1.0);
 
     if (Level.NetMode != NM_DedicatedServer)
@@ -226,13 +236,20 @@ Chase:
         MoveToward(MoveTarget, GetMoveSpeed());
         Goto('Chase');
     }
-    else
+
+    // Path failed: try a random nearby node as intermediate waypoint
+    MoveTarget = FindRandomDest();
+    if (MoveTarget != None)
     {
-        // No node path found: move in general direction of enemy
-        MoveTo(Location + Normal(TargetEnemy.Location - Location) * 150, GetMoveSpeed() * 0.7);
-        Sleep(0.1);
-        Goto('Scan');
+        TurnToward(MoveTarget);
+        MoveToward(MoveTarget, GetMoveSpeed() * 0.6);
+        Goto('Chase');
     }
+
+    // No nodes reachable: nudge toward target directly
+    MoveTo(Location + Normal(TargetEnemy.Location - Location) * 120, GetMoveSpeed() * 0.5);
+    Sleep(0.15);
+    Goto('Scan');
 }
 
 state Escorting
@@ -323,17 +340,17 @@ defaultproperties
 {
      bFlyer=True
      SeekRadius=1800.000000
-     Damage=350
+     Damage=320
      DamageRadius=450.000000
-     Health=75
+     Health=15
      AirSpeed=620.000000
      GroundSpeed=540.000000
      AccelRate=2400.000000
      DrawType=DT_Mesh
      Mesh=LodMesh'RageWeapons.TripBombsThrowMesh'
      DrawScale=2.000000
-     CollisionRadius=24.000000
-     CollisionHeight=16.000000
+     CollisionRadius=14.000000
+     CollisionHeight=10.000000
      LightType=LT_Pulse
      LightBrightness=255
      LightRadius=12
