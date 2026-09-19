@@ -839,7 +839,7 @@ function bool IsForTeam(PlayerReplicationInfo PRI, NavigationPoint candidate, in
             if (UnitsAway < 5)
                 friendlyPlayers++;
         }
-        else if (UnitsAway <= 1.5)
+        else if (UnitsAway <= 1.6)
             return false;
     }
 
