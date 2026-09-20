@@ -4,56 +4,37 @@
 class SeekerMine extends Pawn;
 
 var byte PlacedTeam;
-var Pawn Placer;
 var Actor TargetEnemy;
-var() config bool bFlyer;
-var() config float SeekRadius;
-var() config int Damage;
-var() config float DamageRadius;
+var config bool bFlyer;
+var config float SeekRadius;
+var config int Damage;
+var config float DamageRadius;
 var bool bDetonated;
 
 function PostBeginPlay()
 {
     Super.PostBeginPlay();
 
-    if (Instigator != None)
-        InitPlacer(Instigator);
-    else
-        PlacedTeam = 255;
-
     if (bFlyer)
         SetPhysics(PHYS_Flying);
     else
         SetPhysics(PHYS_Walking);
 
-    UpdateTeamLight();
     AmbientSound = Sound'WeaponSFX_TripBombs.Active';
 }
 
-function InitPlacer(Pawn InPlacer)
+function InitPlacer(Pawn Placer)
 {
-    if (InPlacer == None)
-        return;
+    Instigator = Placer;
+    if (Instigator != None && Instigator.PlayerReplicationInfo != None)
+    {
+        PlacedTeam = Instigator.PlayerReplicationInfo.Team;
 
-    Placer = InPlacer;
-    Instigator = InPlacer;
-
-    if (InPlacer.PlayerReplicationInfo != None)
-        PlacedTeam = InPlacer.PlayerReplicationInfo.Team;
-    else
-        PlacedTeam = 255;
-
-    UpdateTeamLight();
-}
-
-function UpdateTeamLight()
-{
-    if (PlacedTeam == 0)
-        LightHue = 170; // Blue
-    else if (PlacedTeam == 1)
-        LightHue = 0;   // Red
-    else
-        LightHue = 40;  // Amber / Deathmatch
+        if (PlacedTeam == 0)
+            LightHue = 170; // Blue
+        else if (PlacedTeam == 1)
+            LightHue = 0; // Red
+    }
 }
 
 function float GetMoveSpeed()
@@ -65,7 +46,7 @@ function float GetMoveSpeed()
 
 function bool IsPawnFriendly(Pawn P)
 {
-    if (P == None || P.Health <= 0 || P == Placer)
+    if (P == None || P.Health <= 0 || P == Instigator)
         return true;
     if (Level.Game.bTeamGame)
         return P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.Team == PlacedTeam;
@@ -78,7 +59,7 @@ function bool IsFriendly(Actor Other)
     local SeekerMine OtherMine;
     local int i;
 
-    if (Other == None || Other == Self || Other == Placer)
+    if (Other == None || Other == Self || Other == Instigator)
         return true;
 
     // Enemy seeker mines should blow each other up
@@ -87,7 +68,7 @@ function bool IsFriendly(Actor Other)
     {
         if (Level.Game.bTeamGame)
             return OtherMine.PlacedTeam == PlacedTeam;
-        return OtherMine.Placer == Placer;
+        return OtherMine.Instigator == Instigator;
     }
 
     V = Vehicle(Other);
@@ -204,7 +185,7 @@ Scan:
     if (TargetEnemy == None)
     {
         // If deployer is alive and nearby, escort them
-        if (Placer != None && Placer.Health > 0 && VSize(Location - Placer.Location) < 2500)
+        if (Instigator != None && Instigator.Health > 0 && VSize(Location - Instigator.Location) < 2500)
             GotoState('Escorting');
         else
             GotoState('Roaming');
@@ -260,20 +241,20 @@ FollowLoop:
     if (TargetEnemy != None)
         GotoState('Hunting');
 
-    if (Placer == None || Placer.Health <= 0)
+    if (Instigator == None || Instigator.Health <= 0)
         GotoState('Roaming');
 
     // Follow / guard around placer at a comfortable distance (~450 units)
-    if (VSize(Location - Placer.Location) > 450.0)
+    if (VSize(Location - Instigator.Location) > 450.0)
     {
-        if (actorReachable(Placer))
+        if (actorReachable(Instigator))
         {
-            TurnToward(Placer);
-            MoveToward(Placer, GetMoveSpeed() * 0.85);
+            TurnToward(Instigator);
+            MoveToward(Instigator, GetMoveSpeed() * 0.85);
         }
         else
         {
-            MoveTarget = FindPathToward(Placer);
+            MoveTarget = FindPathToward(Instigator);
             if (MoveTarget != None)
             {
                 TurnToward(MoveTarget);
@@ -283,18 +264,18 @@ FollowLoop:
                 Sleep(0.3);
         }
     }
-    else if (VSize(Location - Placer.Location) < 250.0)
+    else if (VSize(Location - Instigator.Location) < 250.0)
     {
         // Too close to player: back up slightly to maintain the guarding perimeter
         Velocity = Velocity * 0.3;
-        TurnToward(Placer);
-        MoveTo(Location + Normal(Location - Placer.Location) * 160.0, GetMoveSpeed() * 0.5);
+        TurnToward(Instigator);
+        MoveTo(Location + Normal(Location - Instigator.Location) * 160.0, GetMoveSpeed() * 0.5);
     }
     else
     {
         // Orbiting / hovering in the guard perimeter
         Velocity = Velocity * 0.5;
-        TurnToward(Placer);
+        TurnToward(Instigator);
         Sleep(0.25);
     }
 
@@ -310,7 +291,7 @@ RoamLoop:
     if (TargetEnemy != None)
         GotoState('Hunting');
 
-    if (Placer != None && Placer.Health > 0 && VSize(Location - Placer.Location) < 2000)
+    if (Instigator != None && Instigator.Health > 0 && VSize(Location - Instigator.Location) < 2000)
         GotoState('Escorting');
 
     MoveTarget = FindRandomDest();
@@ -338,6 +319,7 @@ Begin:
 
 defaultproperties
 {
+     PlacedTeam=255
      bFlyer=True
      SeekRadius=1800.000000
      Damage=320
@@ -353,5 +335,6 @@ defaultproperties
      CollisionHeight=10.000000
      LightType=LT_Pulse
      LightBrightness=255
+     LightHue=40
      LightRadius=12
 }

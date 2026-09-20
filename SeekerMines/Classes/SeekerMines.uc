@@ -57,7 +57,7 @@ function int CountActiveMines()
     for (P = Level.PawnList; P != None; P = P.NextPawn)
     {
         Mine = SeekerMine(P);
-        if (Mine != None && Mine.Placer == Owner)
+        if (Mine != None && Mine.Instigator == Owner)
             Count++;
     }
     return Count;

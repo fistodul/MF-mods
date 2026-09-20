@@ -19,13 +19,28 @@ function bool IsFriendly(Actor Other)
     local Vehicle V;
     local int i;
     local bool bFoundFriendly;
+    local TripLaser OtherLaser;
+    local TripLaserOnGround OtherGroundLaser;
 
-    if (Other == None)
-        return false;
-
-    // Ignore other trip lasers so they don't trigger each other
-    if (Other.IsA('TripLaser') || Other.IsA('TripLaserOnGround') || Other.IsA('TripLaserThrown'))
+    if (Other == None || Other == Self)
         return true;
+
+    // Check other trip lasers (matching team in team games, or same placer in DM)
+    OtherLaser = TripLaser(Other);
+    if (OtherLaser != None)
+    {
+        if (Level.Game.bTeamGame)
+            return OtherLaser.PlacedTeam == PlacedTeam;
+        return OtherLaser.Instigator == Instigator;
+    }
+
+    OtherGroundLaser = TripLaserOnGround(Other);
+    if (OtherGroundLaser != None)
+    {
+        if (Level.Game.bTeamGame)
+            return OtherGroundLaser.PlacedTeam == PlacedTeam;
+        return OtherGroundLaser.Instigator == Instigator;
+    }
 
     V = Vehicle(Other);
     if (V != None)

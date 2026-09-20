@@ -24,7 +24,6 @@ simulated function DeployMine()
         return;
 
     bDeployed = true;
-
     if (Role == ROLE_Authority)
     {
         Mine = Spawn(class'SeekerMine', Instigator,, Location, Rotation);
