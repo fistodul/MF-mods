@@ -321,9 +321,9 @@ defaultproperties
 {
      PlacedTeam=255
      bFlyer=True
-     SeekRadius=1800.000000
-     Damage=320
-     DamageRadius=450.000000
+     SeekRadius=1900.000000
+     Damage=315
+     DamageRadius=440.000000
      Health=15
      AirSpeed=620.000000
      GroundSpeed=540.000000
