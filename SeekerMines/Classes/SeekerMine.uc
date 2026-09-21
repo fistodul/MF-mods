@@ -144,20 +144,19 @@ function BlowUp()
     HurtRadius(Damage, DamageRadius, 'RageWeaponsDOTTripBombs', 70000, ExplodeLoc);
     MakeNoise(1.0);
 
-    if (Level.NetMode != NM_DedicatedServer)
-        Class'RageEffects.RageEffect'.static.AddExplosion(self, ExplodeLoc, 3.5, vect(0,0,1));
+    Class'RageEffects.RageEffect'.static.AddExplosionServer(self, ExplodeLoc, 3.5, vect(0,0,1));
 
     PlaySound(Sound'WeaponSFX_TripBombs.Bounce', SLOT_Misc, 2.0);
     Destroy();
 }
 
-simulated function Touch(Actor Other)
+function Touch(Actor Other)
 {
     if (!bDetonated && !IsFriendly(Other) && (Other.IsA('Pawn') || Other.IsA('Vehicle')))
         GotoState('Detonating');
 }
 
-simulated function Bump(Actor Other)
+function Bump(Actor Other)
 {
     Touch(Other);
 }
