@@ -12,34 +12,61 @@ function PostBeginPlay()
     Super.PostBeginPlay();
 }
 
-// Returns true if Other is the placer, a confirmed teammate, or a non-empty vehicle with ONLY friendly occupants
+function bool GetPlacedTeam(Actor A, out byte OutTeam)
+{
+    local string S;
+
+    if (A == None)
+        return false;
+
+    S = A.GetPropertyText("PlacedTeam");
+    if (S != "")
+    {
+        OutTeam = byte(int(S));
+        return true;
+    }
+
+    if (A.IsA('StationaryPawn'))
+    {
+        OutTeam = StationaryPawn(A).Team;
+        return true;
+    }
+
+    return false;
+}
+
+function bool IsPawnFriendly(Pawn P)
+{
+    if (P == None || P.Health <= 0)
+        return true;
+
+    if (P.PlayerReplicationInfo != None)
+    {
+        if (Level.Game.bTeamGame)
+            return P.PlayerReplicationInfo.Team == PlacedTeam;
+        return P == Instigator;
+    }
+
+    return true;
+}
+
+// Returns true if Other is a confirmed teammate or a non-empty vehicle with ONLY friendly occupants
 function bool IsFriendly(Actor Other)
 {
-    local Pawn P;
     local Vehicle V;
     local int i;
     local bool bFoundFriendly;
-    local TripLaser OtherLaser;
-    local TripLaserOnGround OtherGroundLaser;
+    local byte OtherTeam;
 
     if (Other == None || Other == Self)
         return true;
 
-    // Check other trip lasers (matching team in team games, or same placer in DM)
-    OtherLaser = TripLaser(Other);
-    if (OtherLaser != None)
+    // Check generic PlacedTeam / Team attribute (TripLaser, SeekerMine, SentryGunTurret, etc.)
+    if (GetPlacedTeam(Other, OtherTeam))
     {
         if (Level.Game.bTeamGame)
-            return OtherLaser.PlacedTeam == PlacedTeam;
-        return OtherLaser.Instigator == Instigator;
-    }
-
-    OtherGroundLaser = TripLaserOnGround(Other);
-    if (OtherGroundLaser != None)
-    {
-        if (Level.Game.bTeamGame)
-            return OtherGroundLaser.PlacedTeam == PlacedTeam;
-        return OtherGroundLaser.Instigator == Instigator;
+            return OtherTeam == PlacedTeam;
+        return Other.Instigator == Instigator;
     }
 
     V = Vehicle(Other);
@@ -50,32 +77,16 @@ function bool IsFriendly(Actor Other)
         {
             if (V.aSeatsOccupant[i] != None)
             {
-                if (Level.Game.bTeamGame)
-                {
-                    if (V.aSeatsOccupant[i].PlayerReplicationInfo.Team != PlacedTeam)
-                        return false;
-                    bFoundFriendly = true;
-                }
-                else
-                {
-                    if (V.aSeatsOccupant[i] != Instigator)
-                        return false;
-                    bFoundFriendly = true;
-                }
+                if (!IsPawnFriendly(V.aSeatsOccupant[i]))
+                    return false;
+                bFoundFriendly = true;
             }
         }
-
         return bFoundFriendly;
     }
 
-    P = Pawn(Other);
-    if (P != None)
-    {
-        if (Level.Game.bTeamGame)
-            return P.PlayerReplicationInfo.Team == PlacedTeam;
-        else
-            return P == Instigator;
-    }
+    if (Other.IsA('Pawn'))
+        return IsPawnFriendly(Pawn(Other));
 
     return false;
 }

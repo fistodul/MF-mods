@@ -44,44 +44,87 @@ function float GetMoveSpeed()
     return GroundSpeed;
 }
 
+function bool GetPlacedTeam(Actor A, out byte OutTeam)
+{
+    local string S;
+
+    if (A == None)
+        return false;
+
+    S = A.GetPropertyText("PlacedTeam");
+    if (S != "")
+    {
+        OutTeam = byte(int(S));
+        return true;
+    }
+
+    if (A.IsA('StationaryPawn'))
+    {
+        OutTeam = StationaryPawn(A).Team;
+        return true;
+    }
+
+    return false;
+}
+
 function bool IsPawnFriendly(Pawn P)
 {
-    if (P == None || P.Health <= 0 || P == Instigator)
+    local byte OtherTeam;
+
+    if (P == None || P.Health <= 0)
         return true;
-    if (Level.Game.bTeamGame)
-        return P.PlayerReplicationInfo != None && P.PlayerReplicationInfo.Team == PlacedTeam;
-    return false;
+
+    // Check generic PlacedTeam / Team attribute (SeekerMine, SentryGunTurret, etc.)
+    if (GetPlacedTeam(P, OtherTeam))
+    {
+        if (Level.Game != None && Level.Game.bTeamGame)
+            return OtherTeam == PlacedTeam;
+        return P.Instigator == Instigator;
+    }
+
+    // Players and bots with PlayerReplicationInfo
+    if (P.PlayerReplicationInfo != None)
+    {
+        if (Level.Game != None && Level.Game.bTeamGame)
+            return P.PlayerReplicationInfo.Team == PlacedTeam;
+        return P == Instigator;
+    }
+
+
+
+    return true;
 }
 
 function bool IsFriendly(Actor Other)
 {
+    local byte OtherTeam;
     local Vehicle V;
-    local SeekerMine OtherMine;
     local int i;
 
-    if (Other == None || Other == Self || Other == Instigator)
+    if (Other == None || Other == Self)
         return true;
 
-    // Enemy seeker mines should blow each other up
-    OtherMine = SeekerMine(Other);
-    if (OtherMine != None)
+    // 1. Generic check for any actor with PlacedTeam / Team attribute (SeekerMine, SentryGunTurret, TripLaser, etc.)
+    if (GetPlacedTeam(Other, OtherTeam))
     {
-        if (Level.Game.bTeamGame)
-            return OtherMine.PlacedTeam == PlacedTeam;
-        return OtherMine.Instigator == Instigator;
+        if (Level.Game != None && Level.Game.bTeamGame)
+            return OtherTeam == PlacedTeam;
+        return Other.Instigator == Instigator;
     }
 
+    // 2. Vehicle check
     V = Vehicle(Other);
     if (V != None)
     {
         for (i = 0; i < V.NumSeats; i++)
         {
-            if (!IsPawnFriendly(V.aSeatsOccupant[i]))
+            if (V.aSeatsOccupant[i] != None && !IsPawnFriendly(V.aSeatsOccupant[i]))
                 return false;
         }
         return true;
     }
 
+    // 3. Pawn check
     if (Other.IsA('Pawn'))
         return IsPawnFriendly(Pawn(Other));
 
