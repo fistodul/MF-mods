@@ -321,7 +321,7 @@ defaultproperties
      PlacedTeam=255
      bFlyer=True
      SeekRadius=1900.000000
-     Damage=315
+     Damage=320
      DamageRadius=440.000000
      Health=15
      AirSpeed=620.000000
@@ -336,4 +336,6 @@ defaultproperties
      LightBrightness=255
      LightHue=40
      LightRadius=12
+     bBlockActors=False
+     bBlockPlayers=False
 }

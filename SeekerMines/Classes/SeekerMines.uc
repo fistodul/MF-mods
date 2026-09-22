@@ -27,8 +27,8 @@ state AltFiring
 
         if (Pawn(Owner).bAltFire == 0 && Pawn(Owner).bFire == 0 && EngineBot(Owner) == None)
         {
-            if (ThrowPower < 3)
-                ThrowPower += 3;
+            if (ThrowPower < 2)
+                ThrowPower += 2;
             LaunchBomb();
         }
     }
@@ -103,6 +103,14 @@ simulated function ClientFinish()
     }
 
     Super.ClientFinish();
+}
+
+simulated function PostRender(canvas Canvas)
+{
+    Super.PostRender(Canvas);
+
+    if (Pawn(Owner) != None && Pawn(Owner).bFire != 0)
+        DrawPowerGuage(Canvas, int(ThrowPower));
 }
 
 defaultproperties

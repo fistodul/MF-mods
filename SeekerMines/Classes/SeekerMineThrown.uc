@@ -11,7 +11,7 @@ simulated function PostBeginPlay()
     SetTimer(0.5, false);
 }
 
-function Timer()
+simulated function Timer()
 {
     DeployMine();
 }
@@ -30,7 +30,7 @@ simulated function DeployMine()
         if (Mine != None)
         {
             Mine.InitPlacer(Instigator);
-            Mine.Velocity = Velocity * 0.4;
+            Mine.Velocity = Velocity * 0.3;
         }
     }
 
