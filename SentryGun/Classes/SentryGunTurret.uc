@@ -224,6 +224,14 @@ function Actor FindBestTarget()
     return Best;
 }
 
+function string KillMessage(name damageType, pawn Other)
+{
+    if (Instigator != None && Instigator.PlayerReplicationInfo != None)
+        return Instigator.PlayerReplicationInfo.PlayerName $ "'s Sentry Gun shredded " $ Other.PlayerReplicationInfo.PlayerName;
+
+    return Other.PlayerReplicationInfo.PlayerName $ " was shredded by a Sentry Gun";
+}
+
 function bool UpdateTurretRotation(Actor Target, float DeltaTime)
 {
     local vector FireStart, TargetPoint, AimDir;
