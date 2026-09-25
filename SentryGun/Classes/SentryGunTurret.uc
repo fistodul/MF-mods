@@ -9,6 +9,7 @@ var config float ScanRange;
 var config int ShotDamage;
 var config float FireInterval;
 var config float AccuracySpread;
+var config float TurnRate;
 
 var int CurrentAmmo;
 var Actor TargetEnemy;
@@ -223,9 +224,67 @@ function Actor FindBestTarget()
     return Best;
 }
 
+function bool UpdateTurretRotation(Actor Target, float DeltaTime)
+{
+    local vector FireStart, TargetPoint, AimDir;
+    local rotator DesiredRot, NewRot;
+    local int YawDiff, PitchDiff, MaxStep;
+
+    if (Target == None)
+        return false;
+
+    FireStart = Location + vect(0,0,10);
+    TargetPoint = GetTargetAimPoint(Target);
+    AimDir = Normal(TargetPoint - FireStart);
+    if (VSize(AimDir) < 0.001)
+        return false;
+
+    DesiredRot = rotator(AimDir);
+    if (TurnRate <= 0.0)
+    {
+        SetRotation(DesiredRot);
+        return true;
+    }
+
+    YawDiff = (DesiredRot.Yaw - Rotation.Yaw) & 65535;
+    if (YawDiff > 32768)
+        YawDiff -= 65536;
+
+    PitchDiff = (DesiredRot.Pitch - Rotation.Pitch) & 65535;
+    if (PitchDiff > 32768)
+        PitchDiff -= 65536;
+
+    if (DeltaTime > 0.0)
+    {
+        MaxStep = int(TurnRate * 182.0444 * DeltaTime);
+        if (MaxStep < 1)
+            MaxStep = 1;
+
+        NewRot = Rotation;
+        if (Abs(YawDiff) <= MaxStep)
+            NewRot.Yaw = DesiredRot.Yaw;
+        else if (YawDiff > 0)
+            NewRot.Yaw += MaxStep;
+        else
+            NewRot.Yaw -= MaxStep;
+
+        if (Abs(PitchDiff) <= MaxStep)
+            NewRot.Pitch = DesiredRot.Pitch;
+        else if (PitchDiff > 0)
+            NewRot.Pitch += MaxStep;
+        else
+            NewRot.Pitch -= MaxStep;
+
+        NewRot.Roll = 0;
+        SetRotation(NewRot);
+    }
+
+    return (Abs(YawDiff) < 2730 && Abs(PitchDiff) < 2730);
+}
+
 function FireShot()
 {
-    local vector FireStart, TargetPoint, AimDir, EndTrace, HitLocation, HitNormal, X, Y, Z;
+    local vector FireStart, AimDir, EndTrace, HitLocation, HitNormal, X, Y, Z;
     local actor HitActor;
 
     if (CurrentAmmo <= 0)
@@ -234,14 +293,7 @@ function FireShot()
     CurrentAmmo--;
 
     FireStart = Location + vect(0,0,10);
-    TargetPoint = GetTargetAimPoint(TargetEnemy);
-    AimDir = Normal(TargetPoint - FireStart);
-
-    SetRotation(rotator(AimDir));
-
     GetAxes(Rotation, X, Y, Z);
-    if (VSize(AimDir) < 0.001)
-        AimDir = X;
 
     AimDir = Normal(X + (FRand() - 0.5) * AccuracySpread * Y + (FRand() - 0.5) * AccuracySpread * Z);
     EndTrace = FireStart + AimDir * ScanRange;
@@ -343,6 +395,7 @@ state Scanning
 
     function BeginState()
     {
+        TargetEnemy = None;
         SetTimer(0.2, true);
     }
 
@@ -354,6 +407,12 @@ state Scanning
 
 state Firing
 {
+    function Tick(float Delta)
+    {
+        if (!bDead && TargetEnemy != None && IsValidTarget(TargetEnemy))
+            UpdateTurretRotation(TargetEnemy, Delta);
+    }
+
     function Timer()
     {
         if (CurrentAmmo <= 0)
@@ -372,7 +431,8 @@ state Firing
             }
         }
 
-        FireShot();
+        if (TurnRate <= 0.0 || UpdateTurretRotation(TargetEnemy, 0.0))
+            FireShot();
 
         if (CurrentAmmo <= 0)
         {
@@ -451,6 +511,7 @@ defaultproperties
      ShotDamage=20
      FireInterval=0.150000
      AccuracySpread=0.025000
+     TurnRate=90.000000
      Team=255
      Health=80
      DrawType=DT_Mesh
