@@ -90,8 +90,6 @@ function bool IsPawnFriendly(Pawn P)
         return P == Instigator;
     }
 
-
-
     return true;
 }
 
