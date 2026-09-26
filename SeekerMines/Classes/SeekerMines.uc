@@ -3,6 +3,8 @@
 //=============================================================================
 class SeekerMines extends TripBombs;
 
+#exec TEXTURE IMPORT NAME=SeekerMineIcon FILE=Textures\drone_icon.bmp GROUP=Icons MIPS=OFF Flags=2
+
 var int MaxActiveMines;
 
 // Redirect primary fire to alt-fire (throw) so both buttons do the same thing.
@@ -119,4 +121,5 @@ defaultproperties
      MaxClipAmmo=1
      PickupMessage="Loaded up Seeker Mines."
      ItemName="Seeker Mine"
+     WeaponIcon=(X=0,Y=0,W=64,H=64,t=Texture'SeekerMines.Icons.SeekerMineIcon')
 }
