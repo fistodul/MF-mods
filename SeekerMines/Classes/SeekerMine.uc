@@ -391,7 +391,7 @@ defaultproperties
      SeekRadius=1900.000000
      Damage=320
      DamageRadius=440.000000
-     MaxLifeTime=600.000000
+     MaxLifeTime=480.000000
      Health=15
      AirSpeed=620.000000
      GroundSpeed=540.000000

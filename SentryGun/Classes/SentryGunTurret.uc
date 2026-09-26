@@ -614,7 +614,7 @@ defaultproperties
      FireIntervalStep=0.040000
      AccuracySpread=0.025000
      TurnRate=100.000000
-     MaxLifeTime=600.000000
+     MaxLifeTime=480.000000
      Team=255
      Health=80
      DrawType=DT_Mesh
