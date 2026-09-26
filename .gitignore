@@ -1,17 +1,17 @@
-Cache
-Maps
-MF-updater
-Music
-Physics
-Sounds
-System
-Textures
-System Volume Information
-UpdateReadme.txt
-Cache*.tmp
-GameuxInstallHelper.dll
-Manual.pdf
-MobileForces*.ico
+/Cache
+/Maps
+/MF-updater
+/Music
+/Physics
+/Sounds
+/System
+/Textures
+/System Volume Information
+/UpdateReadme.txt
+/Cache*.tmp
+/GameuxInstallHelper.dll
+/Manual.pdf
+/MobileForces*.ico
 *.uc
 !CoopMode/**/*.uc
 !Molotov/**/*.uc
