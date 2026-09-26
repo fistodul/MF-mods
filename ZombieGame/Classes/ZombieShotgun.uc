@@ -19,7 +19,7 @@ function Fire(float Value)
     }
 }
 
-function AltFire( float Value )
+function AltFire(float Value)
 {
     Fire(Value);
 }
@@ -32,7 +32,7 @@ simulated function bool ClientFire(float Value)
     NotifyClientFire();
 }
 
-simulated function bool ClientAltFire( float Value )
+simulated function bool ClientAltFire(float Value)
 {
     return ClientFire(Value);
 }

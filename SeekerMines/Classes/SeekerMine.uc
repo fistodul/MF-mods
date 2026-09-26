@@ -5,15 +5,18 @@ class SeekerMine extends Pawn;
 
 var byte PlacedTeam;
 var Actor TargetEnemy;
-var config bool bFlyer;
-var config float SeekRadius;
-var config int Damage;
-var config float DamageRadius;
+var bool bFlyer;
+var float SeekRadius;
+var int Damage;
+var float DamageRadius;
 var bool bDetonated;
+var float MaxLifeTime;
+var float SpawnTime;
 
 function PostBeginPlay()
 {
     Super.PostBeginPlay();
+    SpawnTime = Level.TimeSeconds;
 
     if (bFlyer)
         SetPhysics(PHYS_Flying);
@@ -21,6 +24,11 @@ function PostBeginPlay()
         SetPhysics(PHYS_Walking);
 
     AmbientSound = Sound'WeaponSFX_TripBombs.Active';
+}
+
+function bool IsExpired()
+{
+    return (MaxLifeTime > 0 && Level.TimeSeconds - SpawnTime >= MaxLifeTime);
 }
 
 function InitPlacer(Pawn Placer)
@@ -221,6 +229,12 @@ state Hunting
 {
 Begin:
 Scan:
+    if (IsExpired())
+    {
+        Destroy();
+        Stop;
+    }
+
     TargetEnemy = FindBestTarget();
     if (TargetEnemy == None)
     {
@@ -277,6 +291,12 @@ state Escorting
 {
 Begin:
 FollowLoop:
+    if (IsExpired())
+    {
+        Destroy();
+        Stop;
+    }
+
     TargetEnemy = FindBestTarget();
     if (TargetEnemy != None)
         GotoState('Hunting');
@@ -327,11 +347,18 @@ state Roaming
 {
 Begin:
 RoamLoop:
+    if (IsExpired())
+    {
+        Destroy();
+        Stop;
+    }
+
     TargetEnemy = FindBestTarget();
     if (TargetEnemy != None)
         GotoState('Hunting');
 
-    if (Instigator != None && Instigator.Health > 0 && VSize(Location - Instigator.Location) < 2000)
+    // Re-escort if deployer is alive and within range
+    if (Instigator != None && Instigator.Health > 0 && VSize(Location - Instigator.Location) < 2500)
         GotoState('Escorting');
 
     MoveTarget = FindRandomDest();
@@ -364,6 +391,7 @@ defaultproperties
      SeekRadius=1900.000000
      Damage=320
      DamageRadius=440.000000
+     MaxLifeTime=600.000000
      Health=15
      AirSpeed=620.000000
      GroundSpeed=540.000000

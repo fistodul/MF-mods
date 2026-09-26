@@ -228,33 +228,47 @@ function RestartRound()
 {
     local Pawn P, NextP;
     local RageBot RB;
-    local EnginePhysical Phys, NextPhys;
     local Vehicle V;
     local TripBomb TB;
     local TripBombOnGround TBG;
+    local Inventory Inv;
     local byte initTeam;
 
     RemainingTime = TimeLimit * 60;
     GameReplicationInfo.RemainingTime = RemainingTime;
     GameReplicationInfo.RemainingMinute = RemainingTime;
 
-    // Destroy vehicles, wheels and trip bombs
-    for (Phys = Level.VehicleList; Phys != None; Phys = NextPhys)
+    // Destroy vehicles and player-placed gadget pawns (SeekerMines, SentryGuns, etc.)
+    for (P = Level.PawnList; P != None; P = NextP)
     {
-        NextPhys = Phys.NextPhysical; // cache before SilentDestroy
-        V = Vehicle(Phys);
+        NextP = P.NextPawn;
+        if (P.PlayerReplicationInfo != None)
+            continue;
+
+        V = Vehicle(P);
         if (V != None)
             V.SilentDestroy();
+        else
+            P.Destroy();
     }
 
+    // Destroy trip bombs and trip lasers
     foreach AllActors(Class'TripBomb', TB)
     {
-        TB.Laser.Destroy();
+        if (TB.Laser != None)
+            TB.Laser.Destroy();
         TB.Destroy();
     }
 
     foreach AllActors(Class'TripBombOnGround', TBG)
         TBG.Destroy();
+
+    // Destroy dropped weapons/items left on the ground
+    foreach AllActors(Class'Inventory', Inv)
+    {
+        if (Inv.bTossedOut)
+            Inv.Destroy();
+    }
 
     // Reset players to initial teams and respawn
     for (P = Level.PawnList; P != None; P = NextP)

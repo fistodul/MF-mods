@@ -3,29 +3,39 @@
 //=============================================================================
 class SentryGunTurret extends StationaryPawn;
 
-var config int MaxSentryAmmo;
-var config int SentryHealth;
-var config float ScanRange;
-var config int ShotDamage;
-var config float FireInterval;
-var config float AccuracySpread;
-var config float TurnRate;
+var int MaxSentryAmmo;
+var int SentryHealth;
+var float ScanRange;
+var int ShotDamage;
+var float FireInterval;
+var float InitialFireInterval;
+var float FireIntervalStep;
+var float AccuracySpread;
+var float TurnRate;
 
 var int CurrentAmmo;
 var Actor TargetEnemy;
 var SentryGunTripod Tripod;
 var bool bDead;
+var float CurrentFireInterval;
+var float MaxLifeTime;
+var float SpawnTime;
 
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-
+    SpawnTime = Level.TimeSeconds;
     CurrentAmmo = MaxSentryAmmo;
     Health = SentryHealth;
     SetPhysics(PHYS_None);
 
     if (Role == ROLE_Authority)
         Tripod = Spawn(class'SentryGunTripod', self,, Location - vect(0,0,20), Rotation);
+}
+
+function bool IsExpired()
+{
+    return (MaxLifeTime > 0 && Level.TimeSeconds - SpawnTime >= MaxLifeTime);
 }
 
 simulated function PostNetBeginPlay()
@@ -171,6 +181,42 @@ function bool IsValidTarget(Actor A)
     TargetPoint = GetTargetAimPoint(A);
 
     return FastTrace(TargetPoint, MuzzleLoc);
+}
+
+function CheckVehicleRunOver()
+{
+    local EnginePhysical Veh, NextVeh;
+    local Vehicle V;
+    local float Dist, Speed;
+    local Pawn Driver;
+
+    if (bDead)
+        return;
+
+    for (Veh = Level.VehicleList; Veh != None; Veh = NextVeh)
+    {
+        NextVeh = Veh.NextPhysical;
+        V = Vehicle(Veh);
+        if (V == None || V.Health <= 0)
+            continue;
+
+        Dist = VSize(V.Location - Location);
+        if (Dist > V.CollisionRadius + CollisionRadius + 30)
+            continue;
+
+        Speed = VSize(V.GetTransVel());
+        if (Speed >= V.KillSpeed)
+        {
+            if (V.aSeatsOccupant[V.DriverSeat] != None)
+                Driver = V.aSeatsOccupant[V.DriverSeat];
+
+            if (Driver != None)
+                TakeDamage(Health, Driver, Location, V.Velocity * 50, 'RunDown');
+            else
+                TakeDamage(Health, V, Location, V.Velocity * 50, 'RunDown');
+            return;
+        }
+    }
 }
 
 function Actor FindBestTarget()
@@ -332,6 +378,9 @@ function ProcessTraceHit(Actor Other, Vector HitLoc, Vector HitNorm, Vector Dir)
     }
     else
     {
+        if (IsFriendly(Other))
+            return;
+
         if (Other.bIsPawn)
             Other.PlaySound(Sound'MiscSFX.RageChunkHit',, 4.0,, 100);
 
@@ -387,6 +436,14 @@ state Scanning
 {
     function Timer()
     {
+        CheckVehicleRunOver();
+
+        if (IsExpired())
+        {
+            Destroy();
+            return;
+        }
+
         if (CurrentAmmo <= 0)
         {
             GotoState('OutOfAmmo');
@@ -417,6 +474,7 @@ state Firing
 {
     function Tick(float Delta)
     {
+        CheckVehicleRunOver();
         if (!bDead && TargetEnemy != None && IsValidTarget(TargetEnemy))
             UpdateTurretRotation(TargetEnemy, Delta);
     }
@@ -440,7 +498,13 @@ state Firing
         }
 
         if (TurnRate <= 0.0 || UpdateTurretRotation(TargetEnemy, 0.0))
+        {
             FireShot();
+            CurrentFireInterval = FMax(FireInterval, CurrentFireInterval - FireIntervalStep);
+            SetTimer(CurrentFireInterval, false);
+        }
+        else
+            SetTimer(0.05, false);
 
         if (CurrentAmmo <= 0)
         {
@@ -451,12 +515,40 @@ state Firing
 
     function BeginState()
     {
-        SetTimer(FireInterval, true);
+        CurrentFireInterval = InitialFireInterval;
+
+        if (CurrentAmmo <= 0)
+        {
+            GotoState('OutOfAmmo');
+            return;
+        }
+
+        if (!IsValidTarget(TargetEnemy))
+        {
+            TargetEnemy = FindBestTarget();
+            if (TargetEnemy == None)
+            {
+                GotoState('Scanning');
+                return;
+            }
+        }
+
+        if (TurnRate <= 0.0 || UpdateTurretRotation(TargetEnemy, 0.0))
+        {
+            FireShot();
+            CurrentFireInterval = FMax(FireInterval, CurrentFireInterval - FireIntervalStep);
+            SetTimer(CurrentFireInterval, false);
+        }
+        else
+            SetTimer(0.05, false);
     }
 
     function EndState()
     {
         SetTimer(0.0, false);
+        if (CurrentFireInterval < InitialFireInterval)
+            PlaySound(Sound'WeaponSFX_HeavyMachineGun.SpinDown', SLOT_Misc, 2.5);
+        CurrentFireInterval = InitialFireInterval;
     }
 }
 
@@ -518,8 +610,11 @@ defaultproperties
      ScanRange=1900.000000
      ShotDamage=20
      FireInterval=0.150000
+     InitialFireInterval=0.240000
+     FireIntervalStep=0.040000
      AccuracySpread=0.025000
-     TurnRate=90.000000
+     TurnRate=100.000000
+     MaxLifeTime=600.000000
      Team=255
      Health=80
      DrawType=DT_Mesh
