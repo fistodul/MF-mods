@@ -4,7 +4,6 @@
 class SentryGunTurret extends StationaryPawn;
 
 var int MaxSentryAmmo;
-var int SentryHealth;
 var float ScanRange;
 var int ShotDamage;
 var float FireInterval;
@@ -26,7 +25,6 @@ simulated function PostBeginPlay()
     Super.PostBeginPlay();
     SpawnTime = Level.TimeSeconds;
     CurrentAmmo = MaxSentryAmmo;
-    Health = SentryHealth;
     SetPhysics(PHYS_None);
 
     if (Role == ROLE_Authority)
@@ -606,7 +604,6 @@ simulated event Destroyed()
 defaultproperties
 {
      MaxSentryAmmo=850
-     SentryHealth=80
      ScanRange=1900.000000
      ShotDamage=20
      FireInterval=0.150000
