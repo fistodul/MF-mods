@@ -15,12 +15,6 @@ replication
         MaxHealth, MaxCarry;
 }
 
-simulated function PostBeginPlay()
-{
-    Super.PostBeginPlay();
-    regenerationAccumulator = 0.0;
-}
-
 function ZombieGame GetZombieGame()
 {
     if (ZG == None)
@@ -33,11 +27,10 @@ function ZombieGame GetZombieGame()
     return ZG;
 }
 
-function bool AddInventory(inventory NewItem)
+function bool AddInventory(Inventory NewItem)
 {
     local bool Ret;
     local RageWeapon RW;
-
     Ret = Super.AddInventory(NewItem);
 
     if (bIsNemesis && PlayerReplicationInfo.Team != 1)
