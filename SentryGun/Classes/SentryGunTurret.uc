@@ -201,7 +201,7 @@ function CheckVehicleRunOver()
             continue;
 
         Dist = VSize(V.Location - Location);
-        if (Dist > V.CollisionRadius + CollisionRadius + 30)
+        if (Dist > V.CollisionRadius + CollisionRadius)
             continue;
 
         Speed = VSize(V.GetTransVel());
@@ -583,7 +583,7 @@ function BlowUp()
     bDead = true;
     ExplodeLoc = Location + vect(0,0,10);
 
-    HurtRadius(80, 250, 'RageWeaponsDOTTripBombs', 70000, ExplodeLoc);
+    HurtRadius(85, 250, 'RageWeaponsDOTTripBombs', 70000, ExplodeLoc);
     MakeNoise(1.0);
 
     Class'RageEffects.RageEffect'.static.AddExplosionServer(self, ExplodeLoc, 2.5, vect(0,0,1));
@@ -613,7 +613,7 @@ defaultproperties
      InitialFireInterval=0.240000
      FireIntervalStep=0.040000
      AccuracySpread=0.025000
-     TurnRate=100.000000
+     TurnRate=95.000000
      MaxLifeTime=480.000000
      Team=255
      Health=80
