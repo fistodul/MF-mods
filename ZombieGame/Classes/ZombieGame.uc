@@ -1019,6 +1019,7 @@ defaultproperties
      HUDType=Class'ZombieGame.ZombieHUD'
      MapPrefix="ZM-"
      BeaconName="ZM"
+     RulesMenuType="ZombieGame.screenRulesZombie"
      GameName="Zombie Mode"
      DMMessageClass=Class'ZombieGame.ZombieMessageDM'
      GameReplicationInfoClass=Class'ZombieGame.ZombieReplicationInfo'

@@ -439,6 +439,7 @@ defaultproperties
      HUDType=Class'TugGame.TugHUD'
      MapPrefix="TG-"
      BeaconName="TG"
+     RulesMenuType="TugGame.screenRulesTug"
      GameName="Tug of war"
      GameReplicationInfoClass=Class'TugGame.TugReplicationInfo'
 }
