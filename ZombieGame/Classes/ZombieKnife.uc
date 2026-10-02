@@ -25,7 +25,7 @@ state AltFiring
         Disable('AnimEnd'); // prevent ThrowUpCatch wind-up ending early and calling Finish()
         Disable('Tick');    // re-enabled by inherited Begin: after FinishAnim() completes
 
-        if (Pawn(Owner).IsA('Bot') || Pawn(Owner).IsA('RBot'))
+        if (Pawn(Owner).IsA('RBot'))
         {
             if (Pawn(Owner).Enemy != None)
             {
