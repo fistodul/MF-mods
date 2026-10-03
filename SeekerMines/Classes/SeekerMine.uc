@@ -3,6 +3,25 @@
 //=============================================================================
 class SeekerMine extends Pawn;
 
+#exec MESH IMPORT MESH=Drone_Air ANIVFILE=Models\drone_a.3d DATAFILE=Models\drone_d.3d X=0 Y=0 Z=0 LODSTYLE=10 LODFRAME=0 
+#exec MESH ORIGIN MESH=Drone_Air X=0 Y=0 Z=0 YAW=-64 PITCH=0 ROLL=0
+
+#exec MESH SEQUENCE MESH=Drone_Air SEQ=ALL    STARTFRAME=0 NUMFRAMES=250 RATE=24
+#exec MESH SEQUENCE MESH=Drone_Air SEQ=Still    STARTFRAME=0 NUMFRAMES=1 RATE=24
+
+#exec MESHMAP NEW MESHMAP=Drone_Air MESH=Drone_Air
+#exec MESHMAP SCALE MESHMAP=Drone_Air X=0.1 Y=0.1 Z=0.2
+
+#exec TEXTURE IMPORT NAME=DroneBodyTex FILE=Textures\DroneBody.bmp GROUP=Skins LODSET=2
+#exec TEXTURE IMPORT NAME=DroneArmsTex FILE=Textures\DroneArms.bmp GROUP=Skins LODSET=2
+#exec TEXTURE IMPORT NAME=DroneSensorTex FILE=Textures\DroneSensor.bmp GROUP=Skins LODSET=2
+#exec TEXTURE IMPORT NAME=DroneBombTex FILE=Textures\DroneBomb.bmp GROUP=Skins LODSET=2
+
+#exec MESHMAP SETTEXTURE MESHMAP=Drone_Air NUM=0 TEXTURE=DroneBodyTex
+#exec MESHMAP SETTEXTURE MESHMAP=Drone_Air NUM=1 TEXTURE=DroneArmsTex
+#exec MESHMAP SETTEXTURE MESHMAP=Drone_Air NUM=2 TEXTURE=DroneSensorTex
+#exec MESHMAP SETTEXTURE MESHMAP=Drone_Air NUM=3 TEXTURE=DroneBombTex
+
 var byte PlacedTeam;
 var Actor TargetEnemy;
 var bool bFlyer;
@@ -397,8 +416,7 @@ defaultproperties
      GroundSpeed=540.000000
      AccelRate=2400.000000
      DrawType=DT_Mesh
-     Mesh=LodMesh'RageWeapons.TripBombsThrowMesh'
-     DrawScale=2.000000
+     Mesh=LodMesh'Drone_Air'
      CollisionRadius=14.000000
      CollisionHeight=10.000000
      LightType=LT_Pulse

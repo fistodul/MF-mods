@@ -54,7 +54,8 @@ defaultproperties
 {
      speed=1200.000000
      MaxSpeed=3000.000000
-     DrawScale=2.000000
+     DrawType=DT_Mesh
+     Mesh=LodMesh'Drone_Air'
      CollisionRadius=16.000000
      CollisionHeight=16.000000
 }
