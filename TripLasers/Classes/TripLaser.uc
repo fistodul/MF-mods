@@ -17,7 +17,7 @@ function int GetDamage()
 {
     if (bAnchored)
         return 280;
-    return 190;
+    return 185;
 }
 
 // Returns the placer if still on the laser's team, None if switched (orphaned trap).
