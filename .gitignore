@@ -15,6 +15,7 @@
 *.uc
 !CoopMode/**/*.uc
 !Molotov/**/*.uc
+!PredatorMissile/**/*.uc
 !SeekerMines/**/*.uc
 !SentryGun/**/*.uc
 !Totem/**/*.uc
