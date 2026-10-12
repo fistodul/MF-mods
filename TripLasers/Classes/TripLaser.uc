@@ -5,11 +5,19 @@
 class TripLaser extends TripBomb;
 
 var byte PlacedTeam; // Team frozen at placement time, immune to mid-game team changes
+var bool bAnchored;
 
 function PostBeginPlay()
 {
     PlacedTeam = Instigator.PlayerReplicationInfo.Team;
     Super.PostBeginPlay();
+}
+
+function int GetDamage()
+{
+    if (bAnchored)
+        return 280;
+    return 190;
 }
 
 // Returns the placer if still on the laser's team, None if switched (orphaned trap).
@@ -156,7 +164,10 @@ function Timer()
     }
 
     if (HitA != None)
+    {
         LaserEnd = HitLocation;
+        bAnchored = true;
+    }
     else
         LaserEnd = TraceEnd;
 
@@ -192,7 +203,7 @@ state Active
 
                 if (Pawn(HitA) != None)
                 {
-                    HitA.TakeDamage(280, GetDamageInstigator(), HitLocation, vect(0, 0, 0), 'TripLasersDOTTripLasers');
+                    HitA.TakeDamage(GetDamage(), GetDamageInstigator(), HitLocation, vect(0, 0, 0), 'TripLasersDOTTripLasers');
                     Explode();
                     return;
                 }
@@ -207,7 +218,7 @@ state Active
                 Dist = DistToLaser (P.Location);
 
                 if (Dist < 800 && P.Weapon != None && RageWeapon(P.Weapon).bCanShootBombs && P != Instigator &&
-				   (!Level.Game.bTeamGame || (P.PlayerReplicationInfo.Team != Instigator.PlayerReplicationInfo.Team)) && P.LineOfSightTo(self)
+				   (!Level.Game.bTeamGame || (P.PlayerReplicationInfo.Team != PlacedTeam)) && P.LineOfSightTo(self)
 				) {
                     // Shoot enemy trip bombs
                     EngineBot(P).ShootTarget(self);

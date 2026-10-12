@@ -13,7 +13,6 @@ function bool TryAndStick()
     local Pawn PawnOwner;
     local bool bBot;
     local Rotator UseRot;
-    local vector BombStart, BombEnd, BombHitLocation, BombHitNormal;
 
     PawnOwner = Pawn(Owner);
     bBot = Owner.IsA('EngineBot');
@@ -45,13 +44,8 @@ function bool TryAndStick()
     Other = PawnOwner.TraceShot(HitLocation, HitNormal, EndTrace, StartTrace);
     if (Other != None && (Pawn(Other) == None || !Pawn(Other).bIsPlayer)) // Dont stick to players
     {
-        BombStart = HitLocation;
-        BombEnd = Location + (HitNormal * MaxLaserDistance);
-        if (Trace(BombHitLocation, BombHitNormal, BombEnd, BombStart, true,) != None)
-        {
-            LastBombPlaced = Spawn(Class'TripLaser', Other,, HitLocation, Rotator(HitNormal));
-            return true;
-        }
+        LastBombPlaced = Spawn(Class'TripLaser', Other,, HitLocation, Rotator(HitNormal));
+        return true;
     }
 
     return false;
@@ -72,7 +66,7 @@ function ThrowTripBomb()
 
 defaultproperties
 {
-     MaxLaserDistance=1536.000000
+     MaxLaserDistance=1500.000000
      MaxClipAmmo=3
      WeaponIcon=(X=0,t=Texture'triplasers.Icons.TripLaserIcon')
      DeathMessage="%k Disintegrated %o."
