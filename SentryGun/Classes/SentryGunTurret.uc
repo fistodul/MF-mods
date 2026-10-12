@@ -114,12 +114,36 @@ function bool IsPawnFriendly(Pawn P)
     return true;
 }
 
+// Returns: 0 = Empty, 1 = Friendly, 2 = Hostile (has enemy occupant)
+function byte GetVehicleStatus(Vehicle V)
+{
+    local int i;
+    local bool bHasFriendly;
+
+    if (V == None)
+        return 0;
+
+    for (i = 0; i < V.NumSeats; i++)
+    {
+        if (V.aSeatsOccupant[i] != None)
+        {
+            if (!IsPawnFriendly(V.aSeatsOccupant[i]))
+                return 2;
+            bHasFriendly = true;
+        }
+    }
+
+    if (bHasFriendly)
+        return 1;
+
+    return 0;
+}
+
 function bool IsFriendly(Actor Other)
 {
     local byte OtherTeam;
+    local WheelCollision WC;
     local Vehicle V;
-    local int i;
-    local bool bHasOccupant;
 
     if (Other == None || Other == Self)
         return true;
@@ -133,20 +157,14 @@ function bool IsFriendly(Actor Other)
     }
 
     // 2. Vehicle check
-    V = Vehicle(Other);
+    WC = WheelCollision(Other);
+    if (WC != None)
+        V = Vehicle(WC.Owner);
+    else
+        V = Vehicle(Other);
+
     if (V != None)
-    {
-        for (i = 0; i < V.NumSeats; i++)
-        {
-            if (V.aSeatsOccupant[i] != None)
-            {
-                bHasOccupant = true;
-                if (!IsPawnFriendly(V.aSeatsOccupant[i]))
-                    return false;
-            }
-        }
-        return true;
-    }
+        return GetVehicleStatus(V) == 1;
 
     // 3. Pawn check
     if (Other.IsA('Pawn'))
@@ -174,6 +192,10 @@ function bool IsValidTarget(Actor A)
         return false;
 
     if (A.IsA('Pawn') && Pawn(A).Health <= 0)
+        return false;
+
+    
+    if (A.IsA('Vehicle') && GetVehicleStatus(Vehicle(A)) != 2)
         return false;
 
     if (VSize(A.Location - Location) > ScanRange)
@@ -238,7 +260,7 @@ function Actor FindBestTarget()
     {
         XNextPhysic = Veh.NextPhysical;
         V = Vehicle(Veh);
-        if (V != None && !IsFriendly(V))
+        if (V != None && GetVehicleStatus(V) == 2)
         {
             Dist = VSize(Location - V.Location);
             if (Dist < BestDist)
