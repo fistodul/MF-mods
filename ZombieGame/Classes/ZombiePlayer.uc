@@ -93,6 +93,19 @@ exec function RunAs(string command)
     }
 }
 
+exec function RunAsLooking(string command)
+{
+    local Pawn P;
+    local vector HitLocation, HitNormal;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    P = Pawn(Trace(HitLocation, HitNormal, Location + Vector(Rotation) * 10000, Location));
+    if (P != None)
+        P.ConsoleCommand(command);
+}
+
 exec function SetTo(string command)
 {
     local string temp;
@@ -131,6 +144,27 @@ exec function GetTo(string command)
         command = Mid(command, Len(property) + 1);
         ClientMessage(P.GetPropertyText(command));
     }
+}
+
+exec function SetToSelf(string command)
+{
+    local string property;
+
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    property = UntilSpace(command);
+    command = Mid(command, Len(property) + 1);
+
+    self.SetPropertyText(property, command);
+}
+
+exec function GetToSelf(string command)
+{
+	if (!bAdmin && (Level.Netmode != NM_Standalone))
+		return;
+
+    ClientMessage(self.GetPropertyText(command));
 }
 
 exec function SetToLooking(string command)
