@@ -9,6 +9,7 @@
 
 ## 2. Loadout & Crate Rules
 - **The `TryLoadout` Reload Trap**: The engine automatically calls `RW.Reload()` on **every** weapon in a player's inventory when touching a crate or in a spawn room (`LoadoutZone`). Never execute active weapon abilities in `Reload()` without checking `if (Pawn(Owner) == None || Pawn(Owner).Weapon != self) return;`.
+- **Detecting Loadout Presence**: Avoid fragile multi-state checks. Check `Owner.Region.Zone.IsA('LoadoutZone')` or `TouchingActors(class'LoadoutCrate', LCrate)` directly.
 - **Zero-Damage Zone Transitions**: Zone transitions ping all armor items via `ArmorAbsorbDamage(0, 'Breathe', ...)`. Any armor or cheat-death item MUST early return on `if (Damage <= 0 || DamageType == 'Suicided' || DamageType == 'Crushed') return Damage;` to avoid false triggers.
 
 ## 3. Weapon Lifecycle & Consumables

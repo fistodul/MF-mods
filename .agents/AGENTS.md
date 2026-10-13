@@ -226,33 +226,27 @@ if (GotOne != Loadout_None)
   }
   ```
 
-### B. Detecting Loadout States
-If an action or HUD element must be disabled while a player is inside the loadout menu or at a crate/zone:
+### B. Detecting Loadout Zones & Crates
+Avoid fragile or redundant multi-state checks (such as querying `LoadoutActive` or `IsInState('Loadout')`, which can vary between client and server or desync during menu transitions). The most reliable, direct way to check if an actor is inside a spawn room or touching a resupply crate is:
+
 ```unrealscript
-function bool IsInLoadout()
+function bool IsAtLoadout()
 {
-    if (Owner == None)
-        return false;
+    local LoadoutCrate LCrate;
 
-    // 1. Loadout screen/menu is actively open
-    if (RagePlayerBase(Owner) != None && RagePlayerBase(Owner).LoadoutActive)
+    // 1. Player is inside a team spawn room / loadout zone
+    if (Owner != None && Owner.Region.Zone != None && Owner.Region.Zone.IsA('LoadoutZone'))
         return true;
 
-    // 2. Player is in a loadout state
-    if (Owner.IsInState('Loadout') || Owner.IsInState('StartupInLoadout') || Owner.IsInState('ClientGetLoadoutWeapons'))
-        return true;
-
-    // 3. Player is standing in a spawn/loadout zone
-    if (Owner.Region.Zone != None && Owner.Region.Zone.IsA('LoadoutZone'))
-        return true;
-
-    // 4. Player is touching a loadout crate
-    if (PlayerPawn(Owner) != None && PlayerPawn(Owner).IsAtLoadoutCrate())
+    // 2. Player is actively touching a loadout crate
+    foreach TouchingActors(class'LoadoutCrate', LCrate)
         return true;
 
     return false;
 }
 ```
+
+> **Note**: For custom weapon `Reload()` abilities, the simplest mitigation against `TryLoadout` auto-firing is checking `if (Pawn(Owner).Weapon != self) return;`. This avoids blocking legitimate self-use while in a loadout zone while preventing holstered weapons from triggering.
 
 ### C. Zone Transition & Breathing Pings (`ArmorAbsorbDamage`)
 When players transition between zones or enter water/loadout zones, the engine invokes `ReduceDamage(0, 'Breathe', ...)` which queries all inventory armor actors via `ArmorAbsorbDamage(Damage, DamageType, HitLocation)`.
