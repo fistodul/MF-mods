@@ -194,7 +194,6 @@ function bool IsValidTarget(Actor A)
     if (A.IsA('Pawn') && Pawn(A).Health <= 0)
         return false;
 
-    
     if (A.IsA('Vehicle') && GetVehicleStatus(Vehicle(A)) != 2)
         return false;
 
