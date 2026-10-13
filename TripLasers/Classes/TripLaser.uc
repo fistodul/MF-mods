@@ -231,8 +231,6 @@ state Active
 
     function Explode()
     {
-        if (Laser != None)
-            Laser.Destroy();
         Destroy();
     }
 
@@ -243,8 +241,17 @@ state Active
 
 }
 
+// Also runs on LifeSpan expiry, so the beam never outlives the laser
+function Destroyed()
+{
+    if (Laser != None)
+        Laser.Destroy();
+    Super.Destroyed();
+}
+
 defaultproperties
 {
+     LifeSpan=480.000000
      LaserMaxDistance=1500.000000
      SoundVolume=80
 }

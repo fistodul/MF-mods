@@ -17,23 +17,15 @@ var Actor TargetEnemy;
 var SentryGunTripod Tripod;
 var bool bDead;
 var float CurrentFireInterval;
-var float MaxLifeTime;
-var float SpawnTime;
 
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-    SpawnTime = Level.TimeSeconds;
     CurrentAmmo = MaxSentryAmmo;
     SetPhysics(PHYS_None);
 
     if (Role == ROLE_Authority)
         Tripod = Spawn(class'SentryGunTripod', self,, Location - vect(0,0,20), Rotation);
-}
-
-function bool IsExpired()
-{
-    return (MaxLifeTime > 0 && Level.TimeSeconds - SpawnTime >= MaxLifeTime);
 }
 
 simulated function PostNetBeginPlay()
@@ -453,12 +445,6 @@ state Scanning
     {
         CheckVehicleRunOver();
 
-        if (IsExpired())
-        {
-            Destroy();
-            return;
-        }
-
         if (CurrentAmmo <= 0)
         {
             GotoState('OutOfAmmo');
@@ -621,6 +607,7 @@ simulated event Destroyed()
 
 defaultproperties
 {
+     LifeSpan=480.000000
      MaxSentryAmmo=850
      ScanRange=1900.000000
      ShotDamage=20
@@ -629,7 +616,6 @@ defaultproperties
      FireIntervalStep=0.040000
      AccuracySpread=0.025000
      TurnRate=95.000000
-     MaxLifeTime=480.000000
      bCanFly=False
      Health=80
      bAlwaysRelevant=True

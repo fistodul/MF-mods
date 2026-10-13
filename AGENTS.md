@@ -557,7 +557,8 @@ Mature mods in this repository adhere to these principles:
 
 1. **Minimal & Deduplicated**:
    - Avoid creating duplicate variables (e.g. `BaseSpeed` vs `Speed`, or duplicate state booleans).
-   - Reuse engine variables (`Speed`, `MaxSpeed`, `Damage`, `MomentumTransfer`) before inventing custom ones.
+   - Reuse engine variables (`Speed`, `MaxSpeed`, `Damage`, `MomentumTransfer`, `LifeSpan`) before inventing custom ones. For a max lifetime, set `LifeSpan` in `defaultproperties` instead of tracking `SpawnTime`; the engine destroys the actor on time, so put cleanup (beams, tripods) in `Destroyed()` (see `TripLaser`, `SeekerMine`, `SentryGunTurret`).
+   - Remove unused locals and variables; UCC doesn't warn about them.
 2. **Necessary Checks Only**:
    - Before adding a guard, read the engine path it protects against. Drop it if a called function, the parent class or the engine already covers it (e.g. `IsValidTarget(A)` already tests `A == None`).
    - `bDeleteMe` only matters for a reference held across ticks that might point to a destroyed actor (e.g. a stored target that still has `Health > 0` after its player disconnects, as in `RageTeamGame` and `SentryGunTurret.IsValidTarget`). Don't add it for harmless writes to a dying actor, or when the destroy path already cleans up: `Pawn.Destroyed` destroys all inventory, so a weapon's own `Destroyed()` handles owner disconnects.

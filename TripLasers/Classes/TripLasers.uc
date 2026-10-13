@@ -6,6 +6,31 @@ class TripLasers extends TripBombs;
 
 #exec TEXTURE IMPORT NAME=TripLaserIcon FILE=Textures\triplaser_icon.bmp GROUP=Icons MIPS=OFF Flags=2
 
+var int MaxActiveLasers;
+
+// Planted, on-ground and in-flight lasers all count, so quick throws can't exceed the cap
+function int CountActiveLasers()
+{
+    local Actor A;
+    local int Count;
+
+    foreach AllActors(class'Actor', A)
+    {
+        if (A.Instigator == Owner && (TripLaser(A) != None || TripLaserOnGround(A) != None || TripLaserThrown(A) != None))
+            Count++;
+    }
+    return Count;
+}
+
+function bool AtLaserLimit()
+{
+    if (CountActiveLasers() < MaxActiveLasers)
+        return false;
+
+    Pawn(Owner).ClientMessage("Max active Trip Lasers reached: " $ MaxActiveLasers);
+    return true;
+}
+
 function bool TryAndStick()
 {
     local vector HitLocation, HitNormal, StartTrace, EndTrace, X, Y, Z;
@@ -13,6 +38,9 @@ function bool TryAndStick()
     local Pawn PawnOwner;
     local bool bBot;
     local Rotator UseRot;
+
+    if (AtLaserLimit())
+        return false;
 
     PawnOwner = Pawn(Owner);
     bBot = Owner.IsA('EngineBot');
@@ -53,8 +81,10 @@ function bool TryAndStick()
 
 function ThrowTripBomb()
 {
-    local TripBombThrown Bomb;
     local vector X, Y, Z;
+
+    if (AtLaserLimit())
+        return;
 
     UseAmmo(1);
     GetAxes(Pawn(Owner).ViewRotation, X, Y, Z);
@@ -66,6 +96,7 @@ function ThrowTripBomb()
 
 defaultproperties
 {
+     MaxActiveLasers=10
      MaxLaserDistance=1500.000000
      MaxClipAmmo=3
      WeaponIcon=(X=0,t=Texture'triplasers.Icons.TripLaserIcon')
