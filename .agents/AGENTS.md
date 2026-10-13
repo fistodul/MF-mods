@@ -176,10 +176,7 @@ if ( !PlayerOwner.bBehindView && (RagePlayerOwner.Weapon != None) && (Level.Leve
 - `bOwnsCrossHair` is an actor variable that **does not replicate automatically**.
 - If a weapon draws its own crosshair or terminal overlay (FLIR, missile camera, sniper scope), set `bOwnsCrossHair` in `PostRender` every frame. Don't rely on the weapon's `Tick`, which RageWeapon's client states can shadow (see **7F**):
   ```unrealscript
-  if (ActiveMissile != None && !ActiveMissile.bDeleteMe)
-      bOwnsCrossHair = true;
-  else
-      bOwnsCrossHair = false;
+  bOwnsCrossHair = ActiveMissile != None;
   ```
 
 ### B. Canvas Rendering Conventions
@@ -513,8 +510,10 @@ Mature mods in this repository adhere to these principles:
 1. **Minimal & Deduplicated**:
    - Avoid creating duplicate variables (e.g. `BaseSpeed` vs `Speed`, or duplicate state booleans).
    - Reuse engine variables (`Speed`, `MaxSpeed`, `Damage`, `MomentumTransfer`) before inventing custom ones.
-2. **Defensive Pointer Handling**:
-   - Check `if (P != None && !P.bDeleteMe && P.Health > 0)`.
+2. **Necessary Checks Only**:
+   - Before adding a guard, read the engine path it protects against. Drop it if a called function, the parent class or the engine already covers it (e.g. `IsValidTarget(A)` already tests `A == None`).
+   - `bDeleteMe` only matters for a reference held across ticks that might point to a destroyed actor (e.g. a stored target that still has `Health > 0` after its player disconnects, as in `RageTeamGame` and `SentryGunTurret.IsValidTarget`). Don't add it for harmless writes to a dying actor, or when the destroy path already cleans up: `Pawn.Destroyed` destroys all inventory, so a weapon's own `Destroyed()` handles owner disconnects.
+   - `IsA('Name')` takes a plain name that the compiler never checks. Confirm `class Name` exists under `*/Classes` first. `IsA('Bot')` compiled fine but matched nothing, because MF has no `Bot` class. MF bots are `EngineBot` > `RBot` > `RageBot`.
    - Never assume `Instigator` exists on clients; fall back to `Owner`.
 3. **Clean Weapon Lifecycle**:
    - When a consumable weapon runs out of ammo and is destroyed:

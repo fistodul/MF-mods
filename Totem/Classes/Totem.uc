@@ -64,8 +64,8 @@ function int ArmorAbsorbDamage(int Damage, name DamageType, vector HitLocation)
     local int AllowedDamage;
     local Pawn P;
 
-    // Ignore zero-damage calls (zone transitions send ReduceDamage(0, 'Breathe')) and unblockable damage types
-    if (Damage <= 0 || DamageType == 'Suicided' || DamageType == 'Crushed')
+    // Ignore zero-damage calls (zone transitions send ReduceDamage(0, 'Breathe')) and mover crushes
+    if (Damage <= 0 || DamageType == 'Crushed')
         return Damage;
 
     P = Pawn(Owner);

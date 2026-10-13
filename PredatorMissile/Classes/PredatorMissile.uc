@@ -224,11 +224,8 @@ function UnfreezeGuider()
     if (FrozenPawn == None)
         return;
 
-    if (!FrozenPawn.bDeleteMe)
-    {
-        FrozenPawn.GroundSpeed = SavedGroundSpeed;
-        FrozenPawn.JumpZ = SavedJumpZ;
-    }
+    FrozenPawn.GroundSpeed = SavedGroundSpeed;
+    FrozenPawn.JumpZ = SavedJumpZ;
     FrozenPawn = None;
 }
 
@@ -301,8 +298,8 @@ function ServerTick(float DeltaTime)
 {
     local PlayerPawn PP;
 
-    // Destroy if owner died or disconnected
-    if (Instigator == None || Instigator.bDeleteMe || Instigator.Health <= 0)
+    // Destroy if owner died (a disconnect destroys the weapon, which destroys the missile)
+    if (Instigator == None || Instigator.Health <= 0)
     {
         bClientDriven = false;
         Explode(Location, vect(0,0,1));

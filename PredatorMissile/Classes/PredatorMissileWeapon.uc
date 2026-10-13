@@ -425,7 +425,7 @@ simulated function PostRender(canvas Canvas)
         Missile = PredatorMissile(PP.ViewTarget);
 
     // If weapon is held by player but missile is not active, display warmup telemetry on HUD
-    if (Missile == None || Missile.bDeleteMe)
+    if (Missile == None)
     {
         bOwnsCrossHair = false;
         if (PP.Weapon == self && WarmupDuration > 0.0)

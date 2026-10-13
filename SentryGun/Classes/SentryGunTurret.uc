@@ -491,7 +491,7 @@ state Firing
     function Tick(float Delta)
     {
         CheckVehicleRunOver();
-        if (!bDead && TargetEnemy != None && IsValidTarget(TargetEnemy))
+        if (!bDead && IsValidTarget(TargetEnemy))
             UpdateTurretRotation(TargetEnemy, Delta);
     }
 

@@ -31,6 +31,8 @@ trigger: always_on
 ## 4. Timers, States & Compiler Quirks
 - **State Changes Clear Timers**: Calling `GotoState(...)` (including `GiveTo()` transitioning to `Idle2`) cancels all active timers. When spawning buff/effect items, call `Buff.GiveTo(Target)` **first**, and only start timers (`Buff.ActivateBuff()`) **afterwards**.
 - **No Redundant Casts**: Casting a variable to its own type (e.g. `Pawn(P)` when `P` is already a `Pawn`) causes a fatal compiler error: `Cast from 'Pawn' to 'Pawn' is unnecessary`.
+- **No Redundant Guards**: Look up the source before adding a check. Skip it if a callee, the parent class or the engine already handles the case. Check `bDeleteMe` only on references held across ticks (see AGENTS.md 9.2).
+- **`IsA` Names Aren't Compiled**: `IsA('X')` compiles even when class `X` doesn't exist. Confirm `X` is in `*/Classes` first: MF has no `Bot` class, and its bots are `EngineBot` > `RBot` > `RageBot`.
 - **Cache Repeated Casts**: Dynamic casts like `Pawn(Owner)` and `Pawn(Other)` incur runtime bytecode overhead. If used $\ge 2$ times in a function, store in a local variable (`PawnOwner = Pawn(Owner);`).
 - **Ignore Legacy Properties**: Do not waste time configuring `NameColor` (completely ignored by `RageHUD`) or `AmmoType` (`RageWeapon` does not use UT ammo classes).
 

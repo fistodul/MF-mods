@@ -77,7 +77,7 @@ function int ArmorPriority(name DamageType)
 
 function int ArmorAbsorbDamage(int Damage, name DamageType, vector HitLocation)
 {
-    if (bInvulnerable && DamageType != 'Suicided' && DamageType != 'Crushed')
+    if (bInvulnerable && DamageType != 'Crushed')
         return 0;
     return Damage;
 }
