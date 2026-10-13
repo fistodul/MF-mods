@@ -11,7 +11,7 @@ To build mods, run tests, and allow AI coding agents to reference the engine acc
 ```text
 <SteamLibrary>/steamapps/common/Mobile Forces/   (or MobileForces/)
 │   Tracked in this repo:
-├── .agents/              <- AI agent instructions & engine rules (AGENTS.md)
+├── AGENTS.md  <- AI agent rules & engine guide
 ├── CoopMode/ KOH/ TugGame/ ZombieGame/                         <- Custom gamemodes
 ├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/   <- Custom weapons & items
 ├── README.md, LICENSE, .gitignore
@@ -233,12 +233,10 @@ If your weapon needs a custom HUD icon:
 
 ## 6. Architecture & Modding Guide for Agents & Humans
 
-For deep architectural details, networking rules, and engine traps, consult the guides in `.agents/`:
-- **[.agents/AGENTS.md](.agents/AGENTS.md)**: Full reference covering:
+For deep architectural details, networking rules, and engine traps, consult **[AGENTS.md](AGENTS.md)**. It opens with always-on Quick Rules for coding assistants, followed by the full reference covering:
   - Network replication realities (`ROLE_SimulatedProxy`, `bReplicateInstigator`, `ServerMove`, local-player checks).
   - Player-guided actors with client-to-server function calls (`PredatorMissile` pattern), and debugging through logs.
   - Single-use consumables lifecycle (`bDestroyWhenEmpty`, the human `Finish()` bug).
   - Loadout zone & crate triggers (`RW.Reload()` trap).
   - Engine traps: weapon state `Tick`s shadowing yours, freezing players, server-only `Level.Game`/`Level.PawnList`, vehicles living in `Level.VehicleList`.
   - UnrealScript compiler quirks & optimization (state transitions canceling timers, cast caching, short-circuiting).
-- **[.agents/rules/mobile_forces_rules.md](.agents/rules/mobile_forces_rules.md)**: Concise engineering rules for coding assistants.
