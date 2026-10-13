@@ -20,6 +20,7 @@ Always-on summary. The numbered sections below explain each rule in depth.
 
 ### Loadout & Crate Rules
 - **The `TryLoadout` Reload Trap**: The engine automatically calls `RW.Reload()` on **every** weapon in a player's inventory when touching a crate or in a spawn room (`LoadoutZone`). Never execute active weapon abilities in `Reload()` without checking `if (Pawn(Owner) == None || Pawn(Owner).Weapon != self) return;`.
+- **`InventoryGroup` Must Be 1..11**: `RagePlayer`'s loadout arrays (`aLoadoutWeaps[12]`, `aLoadoutWeapsCount[12]`) are indexed by group, so 12+ logs `AddItemToLoadout ... Accessed array out of bounds (12/12)`. Every stock group is taken (1 default, 2 Pistol ... 10 AdrenalineShot, 11 RageArmour), so mods share one (grenLaunch 7, Totem 10, SentryGun/PredatorMissile 11). The HUD shows number keys only for groups 1-9.
 - **Detecting Loadout Presence**: Avoid fragile multi-state checks. Check `Owner.Region.Zone.IsA('LoadoutZone')` or `TouchingActors(class'LoadoutCrate', LCrate)` directly.
 - **Freezing Players**: `bFrozen` doesn't stop walking. On the server set `GroundSpeed = 1.0` (not 0: `CheckBob` divides by it) and `JumpZ = 0`, saving and restoring the originals on every exit path.
 - **`DeleteInventory` Keeps Carry Penalty**: Call `PawnOwner.SetSpeedFromInventory()` after manually deleting an item.

@@ -591,7 +591,7 @@ defaultproperties
      DeathMessage="%k called in a Predator Missile on %o."
      MaxCanCarry=1
      CarrySize=2
-     InventoryGroup=12
+     InventoryGroup=11
      PickupMessage="Predator Missile Terminal."
      ItemName="Predator Missile"
      PlayerViewOffset=(X=2.000000,Y=0.200000,Z=-1.000000)
