@@ -1,50 +1,70 @@
 //=============================================================================
 // PredatorMissileWeapon - Tactical Missile / Nuclear Strike Controller
 //=============================================================================
-class PredatorMissileWeapon extends TripBombs;
+class PredatorMissileWeapon extends RageWeapon;
 
 #exec TEXTURE IMPORT NAME=PredatorIcon FILE=Textures\predator_icon.bmp GROUP=Icons MIPS=OFF Flags=2
 
 var PredatorMissile ActiveMissile;
-var bool bGuiding;
 var float GroundLevelZ;
 
 var color HudGreen;
 var color HudRed;
 var color HudOrange;
 var color HudDarkGreen;
-var color WhiteColor;
 
 var float MarkerFovScale;
 
 var float WarmupDuration;       // Seconds terminal must warm up after being acquired before launch
-var float ReadyTime;            // Level.TimeSeconds timestamp when systems are ready
+var float ReadyTime;            // Server-only timestamp when systems are ready
+var byte  WarmupSecondsLeft;    // Replicated countdown seconds (0 = ready)
 
 replication
 {
     reliable if (Role == ROLE_Authority)
-        ActiveMissile, bGuiding, ReadyTime;
+        ActiveMissile, WarmupSecondsLeft;
 }
 
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-    if (ReadyTime == 0.0 && WarmupDuration > 0.0)
+    if (Role == ROLE_Authority && ReadyTime == 0.0 && WarmupDuration > 0.0)
+    {
         ReadyTime = Level.TimeSeconds + WarmupDuration;
+        WarmupSecondsLeft = byte(WarmupDuration);
+    }
 }
 
 function GiveTo(pawn Other)
 {
     Super.GiveTo(Other);
     if (WarmupDuration > 0.0)
+    {
         ReadyTime = Level.TimeSeconds + WarmupDuration;
+        WarmupSecondsLeft = byte(WarmupDuration);
+    }
+}
+
+// Server-only warmup countdown. Guidance, camera and movement freeze live in PredatorMissile:
+// on clients RageWeapon's state Ticks (ClientFiring, ClientDown, ...) shadow this function.
+simulated function Tick(float DeltaTime)
+{
+    Super.Tick(DeltaTime);
+
+    if (Role != ROLE_Authority)
+        return;
+
+    if (Level.TimeSeconds < ReadyTime)
+        WarmupSecondsLeft = byte(Min(int(ReadyTime - Level.TimeSeconds) + 1, 255));
+    else
+        WarmupSecondsLeft = 0;
 }
 
 function Fire(float Value)
 {
     local int SecondsLeft;
 
-    if (ActiveMissile != None || bGuiding)
+    if (ActiveMissile != None)
         return;
 
     if (Level.TimeSeconds < ReadyTime)
@@ -60,12 +80,7 @@ function Fire(float Value)
 
     if (AmmoInClip() && Pawn(Owner) != None && Pawn(Owner).CanFire())
     {
-        if (LaunchMissile())
-        {
-            bPointing = True;
-            bCanClientFire = true;
-            ClientFire(Value);
-        }
+        LaunchMissile();
     }
 }
 
@@ -79,15 +94,7 @@ simulated function bool ClientFire(float Value)
     if (RagePlayerBase(Owner) != None && RagePlayerBase(Owner).LoadoutActive)
         return false;
 
-    if (Level.TimeSeconds < ReadyTime)
-        return false;
-
-    if (bCanClientFire && ((Role == ROLE_Authority) || AmmoInClip()))
-    {
-        PlayFiringAnim();
-        return true;
-    }
-    return false;
+    return ActiveMissile == None && WarmupSecondsLeft == 0;
 }
 
 simulated function bool ClientAltFire(float Value)
@@ -95,17 +102,35 @@ simulated function bool ClientAltFire(float Value)
     return ClientFire(Value);
 }
 
-final function int SignedPitch(int P)
+// Viewmodel animation stubs (clean handheld terminal, no weapon-firing animations)
+simulated function PlayFiringAnim() {}
+simulated function PlayAltFiringAnim() {}
+simulated function PlayReloadingAnim() {}
+
+simulated function PlaySelectAnim()
 {
-    P = P & 65535;
-    if (P > 32768)
-        P -= 65536;
-    return P;
+    SetTextures();
+    PlayAnim('SelectUp', 1.0, 0.0);
+    if (Owner != None)
+        Owner.PlaySound(SelectSound, SLOT_Misc, Pawn(Owner).SoundDampening);
 }
 
-final function int UnsignedPitch(int P)
+simulated function PlayTweenDownAnim()
 {
-    return P & 65535;
+    PlayAnim('SelectDown', 1.0, 0.0);
+}
+
+simulated function SetTextures()
+{
+    if (Class'LevelInfo'.default.bBlackBlood)
+        SetTexture(Texture'GermArmTexture', 0);
+    else
+        SetTexture(Texture'ArmTexture', 0);
+}
+
+simulated function String GetAmmoStatus()
+{
+    return String(ClipAmmo);
 }
 
 function bool FindLaunchLocation(out vector OutSpawnLoc, out rotator OutSpawnRot, out float OutCeilingHeight)
@@ -114,7 +139,7 @@ function bool FindLaunchLocation(out vector OutSpawnLoc, out rotator OutSpawnRot
     local actor HitActor;
     local float BestHeight, GroundZ, CeilZ, ProbeHeight;
     local vector BestSpawnLoc, Offsets[5];
-    local int i, SPitch;
+    local int i;
     local vector GroundHitLoc, GroundHitNorm;
 
     if (Pawn(Owner) == None)
@@ -178,12 +203,7 @@ function bool FindLaunchLocation(out vector OutSpawnLoc, out rotator OutSpawnRot
 
     // Aim downwards towards ground near player
     OutSpawnRot = rotator((StartTrace + vect(0,0,50)) - BestSpawnLoc);
-    SPitch = SignedPitch(OutSpawnRot.Pitch);
-    if (SPitch > -int(class'PredatorMissile'.default.MinDiveAngleDegrees * 182.0444))
-        SPitch = -int(class'PredatorMissile'.default.MinDiveAngleDegrees * 182.0444);
-    else if (SPitch < -int(class'PredatorMissile'.default.MaxDiveAngleDegrees * 182.0444))
-        SPitch = -int(class'PredatorMissile'.default.MaxDiveAngleDegrees * 182.0444);
-    OutSpawnRot.Pitch = UnsignedPitch(SPitch);
+    OutSpawnRot.Pitch = class'PredatorMissile'.static.ClampDivePitch(OutSpawnRot.Pitch);
 
     return true;
 }
@@ -215,51 +235,36 @@ function bool LaunchMissile()
         PlayerPawn(Owner).ViewRotation = SpawnRot;
     }
 
-    bGuiding = true;
-    bOwnsCrossHair = true;
     GotoState('GuidingMissile');
 
     return true;
 }
 
+// Called from PredatorMissile.Destroyed, which already released the camera and unfroze the guider
 function MissileDestroyed()
 {
     local Pawn PawnOwner;
 
-    if (!bGuiding && ActiveMissile == None)
+    if (ActiveMissile == None)
         return;
 
-    bGuiding = false;
-    bOwnsCrossHair = false;
+    ActiveMissile.ControllingWeapon = None;
+    ActiveMissile = None;
 
     PawnOwner = Pawn(Owner);
-
-    if (PlayerPawn(PawnOwner) != None && PlayerPawn(PawnOwner).ViewTarget == ActiveMissile)
-    {
-        PlayerPawn(PawnOwner).ViewTarget = None;
-        PlayerPawn(PawnOwner).bBehindView = false;
-    }
-
-    if (ActiveMissile != None)
-    {
-        ActiveMissile.ControllingWeapon = None;
-        ActiveMissile = None;
-    }
-
     UseAmmo(1);
 
-    if (PawnOwner != None)
+    if (PawnOwner != None && !AmmoInClip())
     {
-        if (!AmmoInClip())
-        {
-            PawnOwner.DeleteInventory(self);
-            PawnOwner.Weapon = None;
-            PawnOwner.SwitchToBestWeapon();
-            if (PawnOwner.PendingWeapon != None)
-                PawnOwner.ChangedWeapon();
-            Destroy();
-            return;
-        }
+        PawnOwner.DeleteInventory(self);
+        // DeleteInventory doesn't drop this terminal's carry penalty from GroundSpeed
+        PawnOwner.SetSpeedFromInventory();
+        PawnOwner.Weapon = None;
+        PawnOwner.SwitchToBestWeapon();
+        if (PawnOwner.PendingWeapon != None)
+            PawnOwner.ChangedWeapon();
+        Destroy();
+        return;
     }
 
     GotoState('Idle');
@@ -267,17 +272,21 @@ function MissileDestroyed()
 
 simulated function Destroyed()
 {
-    if (ActiveMissile != None)
+    local PlayerPawn PP;
+
+    // Destroying the missile also releases the camera and unfreezes the guider
+    if (Role == ROLE_Authority && ActiveMissile != None)
     {
         ActiveMissile.ControllingWeapon = None;
         ActiveMissile.Destroy();
         ActiveMissile = None;
     }
 
-    if (PlayerPawn(Owner) != None && PlayerPawn(Owner).ViewTarget == ActiveMissile)
+    PP = PlayerPawn(Owner);
+    if (PP != None && PP.Weapon == self)
     {
-        PlayerPawn(Owner).ViewTarget = None;
-        PlayerPawn(Owner).bBehindView = false;
+        PP.Weapon = None;
+        PP.SwitchToBestWeapon();
     }
 
     Super.Destroyed();
@@ -285,18 +294,11 @@ simulated function Destroyed()
 
 state GuidingMissile
 {
-    ignores Fire, AltFire;
+    ignores Fire, AltFire, Reload;
 
-    function Tick(float DeltaTime)
+    function bool PutDown()
     {
-        if (Pawn(Owner) != None)
-        {
-            Pawn(Owner).Velocity = vect(0,0,0);
-            Pawn(Owner).Acceleration = vect(0,0,0);
-        }
-
-        if (ActiveMissile == None || ActiveMissile.bDeleteMe)
-            MissileDestroyed();
+        return false;
     }
 }
 
@@ -306,22 +308,19 @@ state GuidingMissile
 
 simulated function bool IsPawnFriendly(Pawn P)
 {
+    local PlayerPawn PP;
+
     if (P == None || P.Health <= 0)
         return true;
 
     if (P == Owner)
         return true;
 
-    if (P.PlayerReplicationInfo != None)
-    {
-        if (Level.Game != None && Level.Game.bTeamGame)
-        {
-            if (Pawn(Owner) != None && Pawn(Owner).PlayerReplicationInfo != None)
-                return P.PlayerReplicationInfo.Team == Pawn(Owner).PlayerReplicationInfo.Team;
-        }
-        return false;
-    }
-    return false;
+    // Level.Game is None on clients; the GRI carries bTeamGame everywhere
+    PP = PlayerPawn(Owner);
+    return PP != None && PP.GameReplicationInfo != None && PP.GameReplicationInfo.bTeamGame
+        && P.PlayerReplicationInfo != None && PP.PlayerReplicationInfo != None
+        && P.PlayerReplicationInfo.Team == PP.PlayerReplicationInfo.Team;
 }
 
 simulated function byte GetVehicleStatus(Vehicle V)
@@ -376,7 +375,6 @@ simulated function DrawTargetDiamond(canvas Canvas, float CX, float CY, float Si
 simulated function DrawWarmupStatus(canvas Canvas, PlayerPawn PP)
 {
     local float CX, CY, TW, TH;
-    local int SecondsLeft;
     local string S;
 
     CX = Canvas.ClipX * 0.5;
@@ -385,10 +383,9 @@ simulated function DrawWarmupStatus(canvas Canvas, PlayerPawn PP)
     Canvas.Style = ERenderStyle.STY_Translucent;
     Canvas.Font = Canvas.SmallFont;
 
-    if (Level.TimeSeconds < ReadyTime)
+    if (WarmupSecondsLeft > 0)
     {
-        SecondsLeft = int(ReadyTime - Level.TimeSeconds) + 1;
-        S = "[ SATELLITE UPLINK: CONNECTING (" $ SecondsLeft $ "s) ]";
+        S = "[ SATELLITE UPLINK: CONNECTING (" $ WarmupSecondsLeft $ "s) ]";
         Canvas.DrawColor = HudOrange;
     }
     else
@@ -414,6 +411,7 @@ simulated function PostRender(canvas Canvas)
     local Vehicle V;
     local byte VStatus;
     local Actor VA;
+    local PredatorMissile Missile;
 
     Super.PostRender(Canvas);
 
@@ -421,13 +419,21 @@ simulated function PostRender(canvas Canvas)
     if (PP == None)
         return;
 
+    // ViewTarget replicates with the camera switch; ActiveMissile may arrive later
+    Missile = ActiveMissile;
+    if (Missile == None)
+        Missile = PredatorMissile(PP.ViewTarget);
+
     // If weapon is held by player but missile is not active, display warmup telemetry on HUD
-    if (!bGuiding || ActiveMissile == None || ActiveMissile.bDeleteMe)
+    if (Missile == None || Missile.bDeleteMe)
     {
+        bOwnsCrossHair = false;
         if (PP.Weapon == self && WarmupDuration > 0.0)
             DrawWarmupStatus(Canvas, PP);
         return;
     }
+
+    bOwnsCrossHair = true;
 
     // Use PlayerCalcView to obtain the EXACT rendering camera location and rotation
     PP.PlayerCalcView(VA, CamLoc, CamRot);
@@ -456,14 +462,14 @@ simulated function PostRender(canvas Canvas)
     else
         AltMeters = int((CamLoc.Z - GroundLevelZ) / 50.0);
     if (AltMeters < 0) AltMeters = 0;
-    SpdMeters = int(ActiveMissile.CurrentSpeed / 50.0);
+    SpdMeters = int(Missile.CurrentSpeed / 50.0);
 
     Canvas.SetPos(Canvas.ClipX - 220, 45);
     Canvas.DrawText("ALT: " $ AltMeters $ " M", false);
     Canvas.SetPos(Canvas.ClipX - 220, 60);
     Canvas.DrawText("SPD: " $ SpdMeters $ " M/S", false);
 
-    if (ActiveMissile.bBoosting)
+    if (Missile.bBoosting)
     {
         Canvas.DrawColor = HudRed;
         Canvas.SetPos(Canvas.ClipX - 220, 75);
@@ -506,10 +512,10 @@ simulated function PostRender(canvas Canvas)
     Proj = (Canvas.ClipX * 0.5) / FMax(Tan(CurrentFOV * 0.008726646), 0.001);
     Proj *= MarkerFovScale;
 
-    // Track enemy pawns
-    for (P = Level.PawnList; P != None; P = P.NextPawn)
+    // Track enemy pawns (Level.PawnList is server-only; vehicles are Pawns but get their own markers below)
+    foreach AllActors(class'Pawn', P)
     {
-        if (P != Owner && P.Health > 0 && P.bProjTarget && !IsPawnFriendly(P))
+        if (P != Owner && EnginePhysical(P) == None && P.Health > 0 && P.bProjTarget && !IsPawnFriendly(P))
         {
             TargetLoc = P.Location;
             TargetLoc.Z += P.EyeHeight * 0.2;
@@ -576,6 +582,8 @@ defaultproperties
 {
      MaxClipAmmo=1
      ClipAmmo=1
+     MaxClips=1
+     bDestroyWhenEmpty=True
      WeaponIcon=(X=0,Y=0,W=128,H=64,t=Texture'PredatorMissile.Icons.PredatorIcon')
      MarkerFovScale=1.000000
      WarmupDuration=10.000000
@@ -586,10 +594,17 @@ defaultproperties
      InventoryGroup=12
      PickupMessage="Predator Missile Terminal."
      ItemName="Predator Missile"
-     bDestroyWhenEmpty=True
+     PlayerViewOffset=(X=2.000000,Y=0.200000,Z=-1.000000)
+     PlayerViewMesh=SkeletalMesh'RageWeapons.TripBombsPlayerMesh'
+     PlayerViewScale=0.200000
+     BobDamping=0.975000
+     PickupViewMesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
+     ThirdPersonMesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
+     Mesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
+     SelectSound=Sound'WeaponSFX_HeavyMachineGun.Select'
+     PickupSound=Sound'WeaponSFX_HeavyMachineGun.Pickup'
      HudGreen=(R=80,G=255,B=120,A=255)
      HudRed=(R=255,G=50,B=50,A=255)
      HudOrange=(R=255,G=165,B=0,A=255)
      HudDarkGreen=(R=30,G=120,B=50,A=200)
-     WhiteColor=(R=255,G=255,B=255,A=255)
 }

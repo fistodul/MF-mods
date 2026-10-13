@@ -10,9 +10,9 @@ Mobile Forces (Rage Software, 2002) is built on an extensively modified **Unreal
 - **Core Hierarchy**:
   - `Object` -> `Actor` -> `Pawn` -> `PlayerPawn` -> `RPlayer` -> `RagePlayer` -> `RagePlayerX` -> Mod Players (`ZombiePlayer`, `CoopPlayer`, etc.).
   - `Inventory` -> `Weapon` -> `RageWeapon` -> Mod Weapons (`TripBombs`, `PredatorMissileWeapon`, `ZombieKnife`, `Totem`, `SeekerMines`, etc.).
-  - `GameInfo` -> `RageGameInfo` -> `RageDeathMatch` -> `RageTeamGame` -> Mod GameModes (`ZombieGame`, `arenaMode`, `TugGame`, etc.).
+  - `GameInfo` -> `RageGameInfo` -> `RageDeathMatch` -> `RageTeamGame` -> Mod GameModes (`ZombieGame`, `TugGame`, `KOH`, etc.).
   - `HUD` -> `RageHUD` -> `RageTeamHUD` -> Mod HUDs (`ZombieHUD`, etc.).
-- **Vehicle System**: Custom physics integration (`PHYS_Physical`, `Vehicle`, `Car`, `Armadillo`, `Buggy`, `Humvee`).
+- **Vehicle System**: Custom physics integration (`PHYS_Physical`, `Vehicle`, `Car`, `Armadillo`, `Buggy`, `Humvee`). Vehicles are `Pawn` subclasses (`Pawn` → `EnginePhysical` → `Physical` → `Vehicle`) but live in `Level.VehicleList`, not `Level.PawnList` (see 7J).
 - **Particle System**: Native particle engine accessed via `Level.Particles.AddOne(...)` and static helpers in `RageEffects.RageEffect`.
 - **Ammo System**: `RageWeapon` does **NOT** use vanilla UT `AmmoType` inventory classes. It manages ammo directly using `ClipAmmo`, `TotalAmmo`, `MaxClipAmmo`, and `MaxClips` on the weapon actor. Native UT code expecting `AmmoType` will fail or return `None`.
 - **Package Compilation**: Engine uses `ucc make`. All compiled `.u` files must match **byte-for-byte** between client and dedicated server; any mismatch triggers network disconnection.
@@ -34,8 +34,8 @@ unreliable if( !bCarriedItem && VehicleIn == none && Physics != PHYS_Physical &&
   - The server **NEVER** sends updated `Location` or `Rotation` afterward.
 - **Consequence**: If client script returns early from `simulated function Tick()` (e.g. `if (Role != ROLE_Authority) return;`), the client's actor will never turn or change velocity—it will fly along its initial spawn vector in a straight line forever!
 - **Solution**:
-  1. For steerable/guided actors (like guided missiles): Client **MUST** run the steering math in `simulated function Tick(float DeltaTime)`.
-  2. If an actor must have server-authoritative rotation without client prediction, replicate a custom rotator variable (e.g. `var rotator replicatedRotation;` as used in `battleRoyale\platform.uc`) or use `RemoteRole = ROLE_DumbProxy`.
+  1. For player-guided actors (guided missiles): the owning client flies the actor in `simulated function Tick` and drives the server copy. See **2E**.
+  2. For server-driven motion that other clients must see, replicate custom state (e.g. `var rotator replicatedRotation;` in the decompiled third-party `battleRoyale\platform.uc`, or `SrvLoc/SrvRot/SrvSpeed` in `PredatorMissile`) and apply it in client `Tick`, or use `RemoteRole = ROLE_DumbProxy`.
 
 ### B. `bReplicateInstigator` & Ownership
 - By default in `Actor.uc`:
@@ -55,17 +55,22 @@ unreliable if( !bCarriedItem && VehicleIn == none && Physics != PHYS_Physical &&
         GuidePawn = Instigator;
     ```
 
-### C. Client Input & `ServerMove`
-- The client sends player inputs to the server via `ServerMove(..., View, ...)`.
-- On the server, `ServerMove` decodes pitch and yaw into `ViewRotation`.
-- When controlling an actor via mouse:
-  - On the client: update the actor's rotation and sync `PlayerPawn.ViewRotation = NewRot`.
-  - On dedicated server (`Level.NetMode == NM_DedicatedServer`): do **not** overwrite `PlayerPawn.ViewRotation`, because `ServerMove` continuously supplies the client's view.
+### C. Client Input, `ServerMove` & Local Players
+- The client sends player inputs to the server via `ServerMove(..., View, ...)`. On the server, `ServerMove` sets `ViewRotation` and `bFire`/`bAltFire`. Other clients never receive another player's `ViewRotation` or `bFire`.
+- Decide "is this the machine the player sits at?" by the viewport, **not** by `NetMode`. A `NetMode != NM_DedicatedServer` check is wrong on listen servers with remote players:
+  ```unrealscript
+  simulated final function bool IsLocalPlayer(PlayerPawn PP)
+  {
+      return PP != None && PP.Player != None && PP.Player.IsA('Viewport');
+  }
+  ```
+  True for standalone, the listen host's own pawn and the owning client. False on the server for remote pawns (`Player` is a `NetConnection`) and on clients for other players (`Player == None`).
+- Never overwrite a remote player's `ViewRotation` on the server: it discards the `ServerMove` input arriving between packets.
 
 ### D. Preventing Double Effects & Explosion Lag
 - If `bNetTemporary = False`, `simulated function Explode()` runs on **both** server and client.
 - If explosion effects (`AddExplosionServer`, `AddVehicleExplosionServer`, `ExplosionGlobal`) are spawned by both, clients get double or quadruple particles, causing immense frame drops.
-- **Rule**: Restrict gameplay impact (damage, scoring, server effects) to `Role == ROLE_Authority`:
+- **Rule**: Restrict gameplay impact (damage, scoring, server effects) to `Role == ROLE_Authority`. For a simple projectile, the client can just `Destroy()` locally:
   ```unrealscript
   if (Role != ROLE_Authority)
   {
@@ -73,6 +78,32 @@ unreliable if( !bCarriedItem && VehicleIn == none && Physics != PHYS_Physical &&
       return;
   }
   ```
+- For guided or camera-carrying actors, do **not** `Destroy()` on a client-side hit: client and server paths differ slightly, and a local destroy drops the camera while the server copy keeps flying. Stop locally and let the server's `Destroy` arrive (see **2E**).
+
+### E. Player-Guided Actors (Pattern Verified In-Game: `PredatorMissile`)
+Server-steered missiles feel laggy, and correcting the client toward the server's path feels like different turning. Making the owning client authoritative gives exactly the single-player feel:
+- **Client → server function calls work on a `ROLE_SimulatedProxy` projectile whose `Owner` is the client's `PlayerPawn`** (`Spawn(class, OwnerPawn, ...)`), verified in-game. Deeper Owner chains (actor owned by a weapon) should work per UE1's top-owner lookup but are untested:
+  ```unrealscript
+  replication
+  {
+      unreliable if (Role == ROLE_Authority && !bNetOwner)   // only clients that don't fly it
+          SrvLoc, SrvRot, SrvSpeed;
+      unreliable if (Role < ROLE_Authority)
+          ServerSyncFlight;      // ~30 Hz: location, yaw/pitch as ints, speed
+      reliable if (Role < ROLE_Authority)
+          ServerImpact;          // client hit something: detonate there
+  }
+  ```
+- **Guiding machine** (`IsLocalPlayer(PP)`): runs the singleplayer steering in `simulated Tick`, sets `PP.ViewRotation = Rotation` to lock the camera, and calls `ServerSyncFlight` periodically. On a hit it stops (`SetPhysics(PHYS_None)`), calls `ServerImpact` once and waits for `Destroy`.
+- **Server**: adopts the synced state (`SetLocation`/`SetRotation`/`Velocity`), ignores its own collisions while client-driven, and owns damage, the movement freeze and `SrvLoc/SrvRot/SrvSpeed` for everyone else.
+- **Other clients**: follow `SrvLoc/SrvRot/SrvSpeed` and ignore local hits.
+- Pass rotators to replicated functions as separate `int` yaw/pitch. Replicated rotator variables are compressed to a byte per component; whether function parameters are too is untested, and ints avoid the question.
+- Do all of this in the projectile, which has no states. A `RageWeapon` subclass's global `Tick` is unreliable on clients (see **7F**).
+
+### F. Debugging Network Code
+- Use `log()` with a tag, or ClientMessage text: `log("Sync loc=" $ Location $ " role=" $ Role, 'PredatorMissile');`
+- Client output goes to `System/MobileForces.log`; a dedicated server writes its own log (e.g. `System/server.log`, depending on how it was started). Compare both sides to see what each machine believes.
+- Log sparingly (on events or throttled with a timer), never every `Tick`. Remove the logs once the behaviour is verified.
 
 ---
 
@@ -99,11 +130,12 @@ if ( ViewTarget != None )
   ```
 - Whenever `ViewTarget != None`, `CalcBehindView` sets `CameraRotation = ViewRotation` and offsets the camera behind `ViewTarget.Location`.
 - If `ViewRotation` is free-floating, moving the mouse rotates the camera in an orbit around the target.
-- **To lock the camera to the target's flight direction**: The target's `Tick` must keep `PlayerPawn.ViewRotation` synchronized with the missile/vehicle heading:
+- **To lock the camera to the target's flight direction**: on the guiding machine only, the target's `Tick` keeps `PlayerPawn.ViewRotation` synchronized with the missile/vehicle heading (each frame the mouse delta added by `UpdateRotation` becomes the steering input):
   ```unrealscript
-  if (Level.NetMode != NM_DedicatedServer)
+  if (IsLocalPlayer(PP))    // see 2C; never NetMode-based
       PP.ViewRotation = NewRot;
   ```
+- `PlayerPawn.ViewTarget` replicates reliably to the owner, so setting it on the server is enough to switch the client's camera. References like a weapon's replicated `ActiveMissile` may arrive later; HUD code can fall back to `PredatorMissile(PP.ViewTarget)`.
 
 ### B. Clean Camera Restoration
 When guidance terminates or the actor is destroyed, **both** server and client must release the camera:
@@ -142,10 +174,9 @@ if ( !PlayerOwner.bBehindView && (RagePlayerOwner.Weapon != None) && (Level.Leve
 }
 ```
 - `bOwnsCrossHair` is an actor variable that **does not replicate automatically**.
-- If a weapon draws its own crosshair or terminal overlay (FLIR, missile camera, sniper scope), it **must** set `bOwnsCrossHair = true` in client-side `Tick` and `PostRender`.
-- In `PostRender`:
+- If a weapon draws its own crosshair or terminal overlay (FLIR, missile camera, sniper scope), set `bOwnsCrossHair` in `PostRender` every frame. Don't rely on the weapon's `Tick`, which RageWeapon's client states can shadow (see **7F**):
   ```unrealscript
-  if (bGuiding && ActiveMissile != None && !ActiveMissile.bDeleteMe)
+  if (ActiveMissile != None && !ActiveMissile.bDeleteMe)
       bOwnsCrossHair = true;
   else
       bOwnsCrossHair = false;
@@ -315,7 +346,10 @@ In `RageWeapon.Finish()`:
   if (ClipAmmo <= 0)
   {
       bIsAnArmor = false;
+      PawnOwner = Pawn(Owner);
       Destroy(); // Inventory.Destroyed() automatically calls Pawn(Owner).DeleteInventory(self)
+      if (PawnOwner != None)
+          PawnOwner.SetSpeedFromInventory(); // DeleteInventory keeps the carry penalty (see 7H)
   }
   ```
 
@@ -368,6 +402,53 @@ native(132) static final operator(30) bool && ( bool A, skip bool B );
 - **`NameColor`**: `Engine.Weapon.var() Color NameColor` is an unused UT99 legacy variable. `RageHUD` does not read it. Setting it has zero effect.
 - **`AmmoType`**: `RageWeapon` does not use vanilla UT `AmmoType` inventory classes. It manages ammo via `ClipAmmo`/`TotalAmmo`.
 - **`bCanThrow`**: Does not prevent weapon dropping in loadout zones unless specifically respected by `RagePlayer`.
+- **`PlayerPawn.bFrozen`**: Only read in a few non-walking states (dying, game ended). It does **not** freeze a walking player.
+
+### F. RageWeapon State `Tick`s Shadow Your Global `Tick` on Clients
+`RageWeapon` defines `Tick` inside `ClientFiring`, `ClientAltFiring`, `ClientReloading`, `ClientDown`, `ClientZoomedIn`, `PreZoomIn` and `PostZoomOut`. Some also call `Disable('Tick')`. A parent class's state function overrides a subclass's global function, so a weapon subclass's `simulated function Tick` silently stops running on the client in those states.
+- Keep client-critical per-frame logic out of weapon `Tick`. Put it in a stateless actor (the projectile) or in `PostRender`.
+- Weapon `Tick` is fine for server-only bookkeeping (e.g. a replicated warmup countdown).
+
+### G. Freezing a Player's Movement
+- Set it on the **server**: `GroundSpeed` replicates reliably to everyone, `JumpZ` to the owner, and `ServerMove` → `MoveAutonomous` uses the server's values.
+- Use a tiny non-zero `GroundSpeed` (e.g. `1.0`), not `0`: `RPlayer.CheckBob` divides by `GroundSpeed`, and a NaN bob breaks the first-person camera. Also set `JumpZ = 0`.
+- Save the original values once and restore them on **every** exit path (impact, owner death, weapon destroyed, `LifeSpan` expiry). Restoring from `Destroyed()` of the actor that froze the player covers all of them.
+
+### H. `DeleteInventory` Doesn't Recalculate Speed
+`Pawn.DeleteInventory` subtracts `CurrentCarry` but leaves `GroundSpeed` with the item's carry penalty. When a consumable removes itself manually, call `PawnOwner.SetSpeedFromInventory()` after `DeleteInventory`.
+
+### I. Server-Only Globals: `Level.Game` and `Level.PawnList`
+- `Level.Game` only exists on the server. Client-side (HUD, `PostRender`) team checks must use `PlayerPawn(Owner).GameReplicationInfo.bTeamGame`.
+- `Level.PawnList` is filled by `AddPawn()` in `Pawn.PreBeginPlay`, which isn't `simulated`, so on clients the list is empty. Client-side code must iterate pawns with `foreach AllActors(class'Pawn', P)`.
+
+### J. Vehicles Are Pawns, but Not in `Level.PawnList`
+- Hierarchy: `Pawn` → `EnginePhysical` (Engine) → `Physical` (Rage, no source in repo) → `Vehicle` → `Car` → `Armadillo`, etc. `Vehicle(P)` casts on a `Pawn` are legal.
+- `EnginePhysical.PreBeginPlay` (`Engine/Classes/EnginePhysical.uc`) replaces `Pawn.PreBeginPlay` and has `Super.PreBeginPlay()` commented out. So it **never calls `AddPawn()`**, and instead links itself into **`Level.VehicleList`** via `NextPhysical`/`LastPhysical`. `Destroyed()` unlinks it again.
+- Consequences:
+  - A `Level.PawnList` loop never sees vehicles (or any `EnginePhysical`), even on the server. The PRI filter in such a loop is still required, because `PawnList` holds players and bots (with a PRI) and gadget pawns like `SeekerMine` and `SentryGunTurret` (without one).
+  - `foreach AllActors(class'Pawn', P)` **does** return vehicles. Filter with `EnginePhysical(P) == None` when only "real" pawns are wanted.
+- Idioms (server):
+  ```unrealscript
+  // Vehicles: cache the next link before SilentDestroy unlinks the current one
+  for (Phys = Level.VehicleList; Phys != None; Phys = NextPhys)
+  {
+      NextPhys = Phys.NextPhysical;
+      V = Vehicle(Phys);
+      if (V != None)
+          V.SilentDestroy();
+  }
+
+  // Non-vehicle pawns without a PRI (SeekerMines, SentryGunTurrets, ...)
+  for (P = Level.PawnList; P != None; P = NextP)
+  {
+      NextP = P.NextPawn;
+      if (P.PlayerReplicationInfo == None)
+          P.Destroy();
+  }
+  ```
+- Target finders that should hit vehicles need both loops. See `SeekerMine.FindBestTarget` and `SentryGunTurret.FindBestTarget`.
+- `VehicleList` is maintained only where `Role == ROLE_Authority`, since `Destroyed()` returns early on clients. On clients, use `foreach AllActors(class'Vehicle', V)`.
+- To check a class's superclass when the source is missing (e.g. `Physical`), read the export table of the compiled `.u`. `ucc batchexport` crashes under Wine and can't handle the space in "Mobile Forces".
 
 ---
 
@@ -440,6 +521,7 @@ Mature mods in this repository adhere to these principles:
      - On server (`MissileDestroyed` / consumption):
        ```unrealscript
        PawnOwner.DeleteInventory(self);
+       PawnOwner.SetSpeedFromInventory(); // see 7H
        PawnOwner.Weapon = None;
        PawnOwner.SwitchToBestWeapon();
        if (PawnOwner.PendingWeapon != None)

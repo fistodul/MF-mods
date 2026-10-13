@@ -1,15 +1,27 @@
+---
+trigger: always_on
+---
+
 # Mobile Forces UnrealScript Rules & Guidelines
 
 ## 1. Engine & Networking Rules
 - **ROLE_SimulatedProxy**: `Actor.Location` and `Actor.Rotation` do NOT replicate to clients after `bNetInitial` in UE1/MF. Any actor requiring smooth client-side steering or movement must execute physics simulation in `simulated function Tick()` on the client.
 - **Instigator Replication**: `bReplicateInstigator` defaults to `False`. Always set `bReplicateInstigator=True` in `defaultproperties` if clients need `Instigator`, or fall back to `Owner`.
-- **Dedicated Server ViewRotation**: On dedicated servers, `PlayerPawn.ViewRotation` is received from the client via `ServerMove`. Do NOT overwrite `PlayerPawn.ViewRotation` on `NM_DedicatedServer`, but DO synchronize `PlayerPawn.ViewRotation = NewRot` on clients and standalone to keep the camera locked behind guided projectiles or turrets.
-- **Single-Authority Damage & Explosions**: In `simulated function Explode()`, guard explosion spawns, sound, and `HurtRadius` behind `if (Role == ROLE_Authority)` to prevent duplicate explosion effects and server/client desync.
-- **Weapon Crosshair**: `RageHUD` checks `RagePlayerOwner.Weapon.bOwnsCrossHair`. Ensure custom weapons set `bOwnsCrossHair = true` on the client whenever a custom overlay or guidance state is active.
+- **Local Player Check, Not NetMode**: Test `PP.Player != None && PP.Player.IsA('Viewport')` to find the machine a player sits at. Only there may you write `PP.ViewRotation` (e.g. to lock a camera behind a guided projectile). `NetMode != NM_DedicatedServer` is wrong on listen servers; the server must never overwrite a remote player's `ViewRotation`.
+- **Player-Guided Actors**: Let the owning client fly the actor and drive the server copy with `Role < ROLE_Authority` replicated functions on the actor itself (verified for a projectile whose Owner is the client's PlayerPawn). Replicate custom position/rotation for other clients. See AGENTS.md 2E (`PredatorMissile`).
+- **Single-Authority Damage & Explosions**: In `simulated function Explode()`, guard explosion spawns, sound, and `HurtRadius` behind `if (Role == ROLE_Authority)` to prevent duplicate explosion effects and server/client desync. Guided/camera actors must not `Destroy()` on a client-side hit; stop and wait for the server.
+- **Weapon Crosshair**: `RageHUD` checks `RagePlayerOwner.Weapon.bOwnsCrossHair`. Set it every frame in `PostRender` whenever a custom overlay or guidance state is active.
+- **Weapon `Tick` Is Unreliable on Clients**: RageWeapon's client states (`ClientFiring`, `ClientDown`, zoom states, ...) define their own `Tick`, which shadows a subclass's global `Tick`. Keep client per-frame logic in a stateless actor or `PostRender`.
+- **Debug via Logs**: Use tagged `log(..., 'MyPackage')` and read `System/MobileForces.log` (client) and the server's log. Potentially use ClientMessage.
 
 ## 2. Loadout & Crate Rules
 - **The `TryLoadout` Reload Trap**: The engine automatically calls `RW.Reload()` on **every** weapon in a player's inventory when touching a crate or in a spawn room (`LoadoutZone`). Never execute active weapon abilities in `Reload()` without checking `if (Pawn(Owner) == None || Pawn(Owner).Weapon != self) return;`.
 - **Detecting Loadout Presence**: Avoid fragile multi-state checks. Check `Owner.Region.Zone.IsA('LoadoutZone')` or `TouchingActors(class'LoadoutCrate', LCrate)` directly.
+- **Freezing Players**: `bFrozen` doesn't stop walking. On the server set `GroundSpeed = 1.0` (not 0: `CheckBob` divides by it) and `JumpZ = 0`, saving and restoring the originals on every exit path.
+- **`DeleteInventory` Keeps Carry Penalty**: Call `PawnOwner.SetSpeedFromInventory()` after manually deleting an item.
+- **Client Team Checks**: `Level.Game` is `None` on clients; use `PlayerPawn(Owner).GameReplicationInfo.bTeamGame`.
+- **`Level.PawnList` Is Server-Only**: It's empty on clients. Use `foreach AllActors(class'Pawn', P)` in HUD/client code, and filter vehicles out with `EnginePhysical(P) == None`.
+- **Vehicles Are Pawns but Not in `PawnList`**: `EnginePhysical.PreBeginPlay` skips `AddPawn()` and links into `Level.VehicleList` (`NextPhysical`). Iterate vehicles on the server with `for (Phys = Level.VehicleList; Phys != None; Phys = NextPhys) { NextPhys = Phys.NextPhysical; ... }` (cache the next link before `SilentDestroy`). See AGENTS.md 7J.
 - **Zero-Damage Zone Transitions**: Zone transitions ping all armor items via `ArmorAbsorbDamage(0, 'Breathe', ...)`. Any armor or cheat-death item MUST early return on `if (Damage <= 0 || DamageType == 'Suicided' || DamageType == 'Crushed') return Damage;` to avoid false triggers.
 
 ## 3. Weapon Lifecycle & Consumables

@@ -1,5 +1,14 @@
 //=============================================================================
 // PredatorMissile - Steerable Tactical Nuclear Missile
+//
+// Network model:
+//   Guiding machine (standalone, listen host or owning client) flies the missile
+//   from local mouse/fire input and locks the camera behind it. A remote owning
+//   client is fully trusted: it drives the server copy via ServerSyncFlight and
+//   decides detonation via ServerImpact.
+//   Server freezes the guider's body, does damage and publishes SrvLoc/SrvRot/SrvSpeed
+//   for other clients (Location/Rotation of a ROLE_SimulatedProxy never replicate
+//   after the initial packet).
 //=============================================================================
 class PredatorMissile extends Projectile;
 
@@ -7,7 +16,6 @@ var PredatorMissileWeapon ControllingWeapon;
 var float BaseSpeed;
 var float CurrentSpeed;
 var bool bBoosting;
-var float CeilingHeight;
 var float FlightTime;
 var float SmokeTimer;
 var Pawn BotTarget;
@@ -31,10 +39,35 @@ var float BoostMultiplier;         // Speed multiplier when holding Fire/AltFire
 // Detonation & Blast
 var float BlastRadius;             // Blast damage radius in units
 
+// Server -> other clients flight state
+var vector  SrvLoc;
+var rotator SrvRot;
+var float   SrvSpeed;
+
+// Server-only
+var bool  bClientDriven;           // Remote guider's client flies the missile; ignore server collisions
+var float LastSyncTime;            // Last ServerSyncFlight; watchdog detonates if syncs stop
+var Pawn  FrozenPawn;
+var float SavedGroundSpeed;
+var float SavedJumpZ;
+
+// Owning client only
+var bool  bClientImpacted;
+var float ClientSyncTimer;
+var float ClientLogTimer;          // Throttled flight log while diagnosing stuck missiles
+
 replication
 {
     reliable if (Role == ROLE_Authority)
-        CurrentSpeed, bBoosting, CeilingHeight, BaseSpeed;
+        BaseSpeed;
+    unreliable if (Role == ROLE_Authority && !bNetOwner)
+        SrvLoc, SrvRot, SrvSpeed, bBoosting;
+
+    // Owning client -> server (missile Owner is the guiding PlayerPawn)
+    unreliable if (Role < ROLE_Authority)
+        ServerSyncFlight;
+    reliable if (Role < ROLE_Authority)
+        ServerImpact;
 }
 
 simulated function PostBeginPlay()
@@ -46,34 +79,32 @@ simulated function PostBeginPlay()
     SoundPitch = 64;
 }
 
-function InitializeFlight(float InCeilingHeight)
+function InitializeFlight(float CeilingHeight)
 {
-    CeilingHeight = FClamp(InCeilingHeight, 600.0, 10000.0);
+    local PlayerPawn PP;
 
     // Target descent flight time adapted to ceiling height (bounded by Speed and MaxSpeed)
-    BaseSpeed = FClamp(CeilingHeight / FMax(TargetFlightTime, 1.0), Speed, MaxSpeed);
+    BaseSpeed = FClamp(FClamp(CeilingHeight, 600.0, 10000.0) / FMax(TargetFlightTime, 1.0), Speed, MaxSpeed);
 
     // Start at initial slow speed to allow comfortable target acquisition
-    CurrentSpeed = BaseSpeed * FClamp(InitialSpeedFactor, 0.2, 1.0);
-
+    CurrentSpeed = BaseSpeed * InitialSpeedFactor;
     Velocity = CurrentSpeed * vector(Rotation);
-    Acceleration = CurrentSpeed * 0.1 * vector(Rotation);
+
+    PP = PlayerPawn(Instigator);
+    bClientDriven = PP != None && !IsLocalPlayer(PP);
+    log("Launch guider=" $ Instigator $ " clientDriven=" $ bClientDriven $ " baseSpeed=" $ BaseSpeed, 'PredatorMissile');
 }
 
-final function int SignedPitch(int P)
+// Clamp a pitch into the dive envelope; returns an unsigned rotator pitch
+static final function int ClampDivePitch(int Pitch)
 {
-    P = P & 65535;
-    if (P > 32768)
-        P -= 65536;
-    return P;
+    Pitch = Pitch & 65535;
+    if (Pitch > 32768)
+        Pitch -= 65536;
+    return Clamp(Pitch, -int(default.MaxDiveAngleDegrees * 182.0444), -int(default.MinDiveAngleDegrees * 182.0444)) & 65535;
 }
 
-final function int UnsignedPitch(int P)
-{
-    return P & 65535;
-}
-
-final function int TurnToward(int Current, int Target, int MaxStep)
+simulated final function int TurnToward(int Current, int Target, int MaxStep)
 {
     local int Diff;
 
@@ -81,13 +112,36 @@ final function int TurnToward(int Current, int Target, int MaxStep)
     if (Diff > 32768)
         Diff -= 65536;
 
-    if (Abs(Diff) <= MaxStep)
-        return Target & 65535;
+    return (Current + Clamp(Diff, -MaxStep, MaxStep)) & 65535;
+}
 
-    if (Diff > 0)
-        return (Current + MaxStep) & 65535;
-    else
-        return (Current - MaxStep) & 65535;
+// Turn toward TargetRot at TurnRate (deg/sec) and fly at CurrentSpeed
+simulated final function TurnTo(rotator TargetRot, float TurnRate, float DeltaTime)
+{
+    local rotator NewRot;
+    local int MaxStep;
+
+    MaxStep = int(TurnRate * 182.0444 * DeltaTime);
+    NewRot.Yaw = TurnToward(Rotation.Yaw, TargetRot.Yaw, MaxStep);
+    NewRot.Pitch = TurnToward(Rotation.Pitch, TargetRot.Pitch, MaxStep);
+    SetRotation(NewRot);
+    Velocity = CurrentSpeed * vector(NewRot);
+}
+
+simulated final function PlayerPawn GuidingPlayer()
+{
+    local PlayerPawn PP;
+
+    PP = PlayerPawn(Owner);
+    if (PP == None)
+        PP = PlayerPawn(Instigator);
+    return PP;
+}
+
+// True only on the machine whose viewport drives this pawn (standalone, listen host, owning client)
+simulated final function bool IsLocalPlayer(PlayerPawn PP)
+{
+    return PP != None && PP.Player != None && PP.Player.IsA('Viewport');
 }
 
 function Pawn FindBotTarget()
@@ -100,12 +154,10 @@ function Pawn FindBotTarget()
     {
         if (P != Instigator && P.Health > 0 && P.bProjTarget)
         {
-            if (Level.Game != None && Level.Game.bTeamGame)
-            {
-                if (P.PlayerReplicationInfo != None && Instigator.PlayerReplicationInfo != None &&
-                    P.PlayerReplicationInfo.Team == Instigator.PlayerReplicationInfo.Team)
-                    continue;
-            }
+            if (Level.Game.bTeamGame && P.PlayerReplicationInfo != None && Instigator.PlayerReplicationInfo != None &&
+                P.PlayerReplicationInfo.Team == Instigator.PlayerReplicationInfo.Team)
+                continue;
+
             Dist = VSize(P.Location - Location);
             if (Dist < BestDist)
             {
@@ -117,85 +169,161 @@ function Pawn FindBotTarget()
     return BestP;
 }
 
+// Runs only on the guiding machine: boost from fire buttons, turn toward the mouse view
+simulated function SteerByPlayer(PlayerPawn PP, float DeltaTime)
+{
+    local rotator TargetRot;
+
+    bBoosting = PP.bFire != 0 || PP.bAltFire != 0;
+    if (bBoosting)
+    {
+        CurrentSpeed = FMin(CurrentSpeed + 2500.0 * DeltaTime, BaseSpeed * BoostMultiplier);
+        SoundPitch = 96;
+    }
+    else
+    {
+        SoundPitch = 64;
+
+        // Hold comfortable slow speed during the initial drop, then ease to cruising speed
+        if (FlightTime < InitialSlowDuration)
+            CurrentSpeed = BaseSpeed * InitialSpeedFactor;
+        else if (CurrentSpeed < BaseSpeed)
+            CurrentSpeed = FMin(CurrentSpeed + (BaseSpeed * 0.8) * DeltaTime, BaseSpeed);
+        else
+            CurrentSpeed = FMax(CurrentSpeed - 1200.0 * DeltaTime, BaseSpeed);
+    }
+
+    TargetRot = PP.ViewRotation;
+    TargetRot.Pitch = ClampDivePitch(TargetRot.Pitch);
+    if (bBoosting)
+        TurnTo(TargetRot, TurnRateBoost, DeltaTime);
+    else
+        TurnTo(TargetRot, TurnRateNormal, DeltaTime);
+
+    // Lock the camera behind the missile (CalcBehindView uses ViewRotation)
+    PP.ViewRotation = Rotation;
+}
+
+function FreezeGuider(Pawn P)
+{
+    if (FrozenPawn == None)
+    {
+        FrozenPawn = P;
+        SavedGroundSpeed = P.GroundSpeed;
+        SavedJumpZ = P.JumpZ;
+    }
+
+    // Tiny non-zero speed: RPlayer.CheckBob divides by GroundSpeed.
+    // GroundSpeed replicates to every client; JumpZ to the owner.
+    P.GroundSpeed = 1.0;
+    P.JumpZ = 0.0;
+}
+
+function UnfreezeGuider()
+{
+    if (FrozenPawn == None)
+        return;
+
+    if (!FrozenPawn.bDeleteMe)
+    {
+        FrozenPawn.GroundSpeed = SavedGroundSpeed;
+        FrozenPawn.JumpZ = SavedJumpZ;
+    }
+    FrozenPawn = None;
+}
+
 simulated function Tick(float DeltaTime)
 {
-    local rotator TargetRot, NewRot;
-    local float MaxTurnRate;
-    local int MaxStep, SPitch, MinDivePitch, MaxDivePitch;
-    local vector TargetDir;
+    local PlayerPawn PP;
+
+    SmokeTimer += DeltaTime;
+    if (SmokeTimer >= 0.035)
+    {
+        SmokeTimer = 0.0;
+        SpawnExhaust();
+    }
 
     FlightTime += DeltaTime;
+
+    if (Role == ROLE_Authority)
+    {
+        ServerTick(DeltaTime);
+        return;
+    }
+
+    PP = GuidingPlayer();
+    if (IsLocalPlayer(PP))
+    {
+        ClientLogTimer -= DeltaTime;
+        if (ClientLogTimer <= 0.0)
+        {
+            ClientLogTimer = 2.0;
+            log("Flight t=" $ FlightTime $ " loc=" $ Location $ " speed=" $ CurrentSpeed $ " phys=" $ Physics $ " impacted=" $ bClientImpacted, 'PredatorMissile');
+        }
+
+        if (bClientImpacted)
+            return;
+
+        // Fallback if BaseSpeed hasn't arrived yet
+        if (BaseSpeed == 0.0)
+            BaseSpeed = Speed;
+        if (CurrentSpeed == 0.0)
+            CurrentSpeed = BaseSpeed * InitialSpeedFactor;
+
+        if (PP.ViewTarget == None)
+        {
+            PP.ViewTarget = self;
+            PP.bBehindView = false;
+        }
+        SteerByPlayer(PP, DeltaTime);
+
+        ClientSyncTimer -= DeltaTime;
+        if (ClientSyncTimer <= 0.0)
+        {
+            ClientSyncTimer = 0.05;
+            ServerSyncFlight(Location, Rotation.Yaw, Rotation.Pitch, CurrentSpeed, bBoosting);
+        }
+    }
+    else if (SrvSpeed > 0)
+    {
+        // Other clients follow the server
+        SetRotation(SrvRot);
+        CurrentSpeed = SrvSpeed;
+        Velocity = SrvSpeed * vector(SrvRot);
+        if (VSize(SrvLoc - Location) > 1000.0)
+            SetLocation(SrvLoc);
+        else
+            SetLocation(Location + (SrvLoc - Location) * FMin(1.0, DeltaTime * 8.0));
+    }
+}
+
+function ServerTick(float DeltaTime)
+{
+    local PlayerPawn PP;
 
     // Destroy if owner died or disconnected
     if (Instigator == None || Instigator.bDeleteMe || Instigator.Health <= 0)
     {
+        bClientDriven = false;
         Explode(Location, vect(0,0,1));
         return;
     }
 
-    if (PlayerPawn(Instigator) != None)
+    // Client-driven missile whose syncs stopped (client stalled or crashed): detonate where it is
+    if (bClientDriven && FlightTime > 2.0 && Level.TimeSeconds - LastSyncTime > 1.0)
     {
-        // 1. Boost control via Fire or AltFire
-        if (PlayerPawn(Instigator).bFire != 0 || PlayerPawn(Instigator).bAltFire != 0)
-        {
-            bBoosting = true;
-            CurrentSpeed = FMin(CurrentSpeed + 2500.0 * DeltaTime, BaseSpeed * BoostMultiplier);
-            SoundPitch = 96;
-        }
-        else
-        {
-            bBoosting = false;
-            SoundPitch = 64;
+        log("Watchdog: no client sync for " $ (Level.TimeSeconds - LastSyncTime) $ "s, detonating", 'PredatorMissile');
+        bClientDriven = false;
+        Explode(Location, vect(0,0,1));
+        return;
+    }
 
-            // If within initial slow drop phase (e.g. first 1.4s), hold comfortable slow speed
-            if (FlightTime < InitialSlowDuration)
-            {
-                CurrentSpeed = BaseSpeed * InitialSpeedFactor;
-            }
-            else
-            {
-                // Smoothly accelerate up to normal cruising speed
-                if (CurrentSpeed < BaseSpeed)
-                    CurrentSpeed = FMin(CurrentSpeed + (BaseSpeed * 0.8) * DeltaTime, BaseSpeed);
-                else
-                    CurrentSpeed = FMax(CurrentSpeed - 1200.0 * DeltaTime, BaseSpeed);
-            }
-        }
-
-        // 2. Steer towards player's mouse view
-        TargetRot = PlayerPawn(Instigator).ViewRotation;
-
-        // In Unreal rotators: 0 is horizontal, -16384 is 90 deg down, +16384 is 90 deg up
-        SPitch = SignedPitch(TargetRot.Pitch);
-
-        // Convert configurable degree limits to Unreal rotator pitch units (182.0444 units per degree)
-        MinDivePitch = int(-MinDiveAngleDegrees * 182.0444);
-        MaxDivePitch = int(-MaxDiveAngleDegrees * 182.0444);
-
-        if (SPitch > MinDivePitch)
-            SPitch = MinDivePitch;
-        else if (SPitch < MaxDivePitch)
-            SPitch = MaxDivePitch;
-
-        TargetRot.Pitch = UnsignedPitch(SPitch);
-
-        // Turn rate in degrees per second converted to rotator units
-        if (bBoosting)
-            MaxTurnRate = TurnRateBoost * 182.0444;
-        else
-            MaxTurnRate = TurnRateNormal * 182.0444;
-        MaxStep = int(MaxTurnRate * DeltaTime);
-
-        NewRot = Rotation;
-        NewRot.Yaw = TurnToward(Rotation.Yaw, TargetRot.Yaw, MaxStep);
-        NewRot.Pitch = TurnToward(Rotation.Pitch, TargetRot.Pitch, MaxStep);
-        NewRot.Roll = 0;
-
-        SetRotation(NewRot);
-        Velocity = CurrentSpeed * vector(NewRot);
-
-        // Keep player's view synchronized with actual missile orientation
-        PlayerPawn(Instigator).ViewRotation = NewRot;
+    PP = PlayerPawn(Instigator);
+    if (PP != None)
+    {
+        FreezeGuider(PP);
+        if (!bClientDriven)
+            SteerByPlayer(PP, DeltaTime);
     }
     else if (EngineBot(Instigator) != None)
     {
@@ -204,24 +332,41 @@ simulated function Tick(float DeltaTime)
 
         if (BotTarget != None)
         {
-            TargetDir = Normal(BotTarget.Location - Location);
-            TargetRot = rotator(TargetDir);
-            MaxStep = int((TurnRateNormal * 182.0444) * DeltaTime);
-            NewRot = Rotation;
-            NewRot.Yaw = TurnToward(Rotation.Yaw, TargetRot.Yaw, MaxStep);
-            NewRot.Pitch = TurnToward(Rotation.Pitch, TargetRot.Pitch, MaxStep);
-            SetRotation(NewRot);
-            Velocity = (BaseSpeed * 1.5) * vector(NewRot);
+            CurrentSpeed = BaseSpeed * 1.5;
+            TurnTo(rotator(BotTarget.Location - Location), TurnRateNormal, DeltaTime);
         }
     }
 
-    // Exhaust particles
-    SmokeTimer += DeltaTime;
-    if (SmokeTimer >= 0.035)
-    {
-        SmokeTimer = 0.0;
-        SpawnExhaust();
-    }
+    SrvLoc = Location;
+    SrvRot = Rotation;
+    SrvSpeed = VSize(Velocity);
+}
+
+// Owning client -> server: adopt the client's flight state
+function ServerSyncFlight(vector ClientLoc, int ClientYaw, int ClientPitch, float ClientSpeed, bool bClientBoost)
+{
+    local rotator R;
+
+    LastSyncTime = Level.TimeSeconds;
+    R.Yaw = ClientYaw;
+    R.Pitch = ClientPitch;
+    SetLocation(ClientLoc);
+    SetRotation(R);
+    CurrentSpeed = ClientSpeed;
+    Velocity = ClientSpeed * vector(R);
+    bBoosting = bClientBoost;
+    if (bBoosting)
+        SoundPitch = 96;
+    else
+        SoundPitch = 64;
+}
+
+// Owning client -> server: the client hit something, detonate there
+function ServerImpact(vector HitLocation, vector HitNormal)
+{
+    log("ServerImpact at " $ HitLocation $ " serverLoc=" $ Location $ " t=" $ FlightTime, 'PredatorMissile');
+    bClientDriven = false;
+    Explode(HitLocation, HitNormal);
 }
 
 simulated function SpawnExhaust()
@@ -229,7 +374,7 @@ simulated function SpawnExhaust()
     local vector ExhaustLoc, BackDir;
     local float FlameScale;
 
-    if (Level.NetMode == NM_DedicatedServer)
+    if (Level.NetMode == NM_DedicatedServer || bClientImpacted)
         return;
 
     BackDir = -vector(Rotation);
@@ -283,63 +428,61 @@ simulated function Landed(vector HitNormal)
 
 simulated function Explode(vector HitLocation, vector HitNormal)
 {
-    local PlayerPawn PP;
-
-    // 1. Immediately reset camera view back to player
-    if (Instigator != None)
+    // Clients never detonate. The owning client reports its hit and waits for the
+    // server's Destroy; other clients ignore local hits and keep following the server.
+    if (Role < ROLE_Authority)
     {
-        PP = PlayerPawn(Instigator);
-        if (PP != None && PP.ViewTarget == self)
+        if (!bClientImpacted && IsLocalPlayer(GuidingPlayer()))
         {
-            PP.ViewTarget = None;
-            PP.bBehindView = false;
-            PP.ShakeView(0.9, 4500.0, 25.0);
+            log("Client impact at " $ HitLocation $ " t=" $ FlightTime, 'PredatorMissile');
+            bClientImpacted = true;
+            Velocity = vect(0,0,0);
+            SetPhysics(PHYS_None);
+            ServerImpact(HitLocation, HitNormal);
         }
+        return;
     }
 
-    // 2. Deafening detonation sound
+    // A client-driven server copy only detonates through ServerImpact
+    if (bClientDriven)
+        return;
+
     PlaySound(Sound'MiscSFX.Explode', SLOT_None, 16.0, true, 8000.0);
 
-    // 3. Spawning global server explosions & secondary fireballs
     Class'RageEffects.RageEffect'.static.AddExplosionServer(self, HitLocation + HitNormal * 32.0, 6.0, HitNormal);
     Class'RageEffects.RageEffect'.static.AddVehicleExplosionServer(self, HitLocation + HitNormal * 32.0, 5.0, HitNormal);
 
     Spawn(class'ExplosionGlobal',,, HitLocation + vect(70,70,50));
     Spawn(class'ExplosionGlobal',,, HitLocation + vect(-70,-70,50));
-    Spawn(class'ExplosionGlobal',,, HitLocation + vect(70,-70,90));
-    Spawn(class'ExplosionGlobal',,, HitLocation + vect(-70,70,90));
 
-    // 4. Catastrophic nuclear blast damage
+    // Unfreeze first so the blast can push the guider
+    UnfreezeGuider();
     HurtRadius(Damage, BlastRadius, MyDamageType, MomentumTransfer, HitLocation);
-
-    // 5. Notify weapon
-    if (ControllingWeapon != None)
-    {
-        ControllingWeapon.MissileDestroyed();
-        ControllingWeapon = None;
-    }
 
     Destroy();
 }
 
+// Runs on server and clients: release camera, unfreeze guider, notify weapon
 simulated function Destroyed()
 {
     local PlayerPawn PP;
 
-    if (Instigator != None)
-    {
-        PP = PlayerPawn(Instigator);
-        if (PP != None && PP.ViewTarget == self)
-        {
-            PP.ViewTarget = None;
-            PP.bBehindView = false;
-        }
-    }
+    log("Destroyed role=" $ Role $ " t=" $ FlightTime $ " lifeSpan=" $ LifeSpan $ " clientImpacted=" $ bClientImpacted, 'PredatorMissile');
 
-    if (ControllingWeapon != None)
+    PP = GuidingPlayer();
+    if (PP != None && PP.ViewTarget == self)
     {
-        ControllingWeapon.MissileDestroyed();
-        ControllingWeapon = None;
+        PP.ViewTarget = None;
+        PP.bBehindView = false;
+    }
+    if (IsLocalPlayer(PP))
+        PP.ShakeView(0.9, 4500.0, 25.0);
+
+    if (Role == ROLE_Authority)
+    {
+        UnfreezeGuider();
+        if (ControllingWeapon != None)
+            ControllingWeapon.MissileDestroyed();
     }
 
     Super.Destroyed();
@@ -363,6 +506,8 @@ defaultproperties
      MyDamageType=PredatorMissileDOTPredatorMissileWeapon
      ExplosionDecal=Class'RAGEEFFECTS.Scorch'
      RemoteRole=ROLE_SimulatedProxy
+     bNetTemporary=False
+     bReplicateInstigator=True
      Mesh=LodMesh'RageWeapons.RocketMesh'
      DrawScale=2.500000
      AmbientGlow=96
@@ -371,5 +516,5 @@ defaultproperties
      CollisionHeight=16.000000
      bOwnerNoSee=True
      bAlwaysRelevant=True
-     LifeSpan=15.000000
+     LifeSpan=20.000000
 }

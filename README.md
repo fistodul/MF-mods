@@ -10,22 +10,18 @@ To build mods, run tests, and allow AI coding agents to reference the engine acc
 
 ```text
 <SteamLibrary>/steamapps/common/Mobile Forces/   (or MobileForces/)
-├── .agents/              <- AI Agent instructions & engine rules (AGENTS.md)
-├── MF-updater/           <- Asset & fast-download updater tool
-├── Core/                 <- Decompiled Engine 436 Core classes
-├── Engine/               <- Decompiled Unreal Engine 1 classes
-├── Rage/                 <- Decompiled MF Player, Physical, Vehicle classes
-├── RageWeapons/          <- Decompiled MF base weapons & inventory classes
-├── RageGame/             <- Decompiled MF game types & team classes
-├── ZombieGame/           <- Custom Zombie Infection gamemode
-├── Totem/                <- Custom Totem of Undying weapon/item
-├── SeekerMines/          <- Custom autonomous drone mine weapon
-├── TripLasers/           <- Custom laser tripwire explosive
-├── Maps/                 <- Game map files (.umf)
-├── Textures/             <- Game texture packages (.utx)
-├── Sounds/               <- Game sound packages (.uax)
-├── System/               <- UCC compiler, game binaries, and configs (.ini, .u)
-└── README.md
+│   Tracked in this repo:
+├── .agents/              <- AI agent instructions & engine rules (AGENTS.md)
+├── CoopMode/ KOH/ TugGame/ ZombieGame/                         <- Custom gamemodes
+├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/   <- Custom weapons & items
+├── README.md, LICENSE, .gitignore
+│
+│   Local only (not tracked):
+├── Core/ Engine/ Rage/ RageWeapons/ RageGame/ ...   <- Decompiled base game classes (section 2B)
+├── arenaMode/ battleRoyale/ mutPack/ ...            <- Decompiled third-party packages (section 2D)
+├── MF-updater/           <- Separate repository (section 2A)
+├── Maps/ Textures/ Sounds/ Music/                   <- Game assets
+└── System/               <- UCC compiler, game binaries, configs (.ini) and compiled packages (.u)
 ```
 
 ### Why clone into the game root?
@@ -87,23 +83,38 @@ cd ..
 
 *(Alternatively, you can open any `.u` file in the Mobile Forces editor, [UE Explorer](https://eliotvu.com/portfolio/view/21/ue-explorer), or WOTgreal and export classes).*
 
-Once decompiled, all native sources will be available locally:
+> **Wine caveats**: `ucc batchexport` has been seen crashing under Wine (stack overflow on `Engine.u`/`Rage.u`), and UCC mis-parses its own path when it contains a space ("Mobile Forces"). Run it through the `MobileForces` symlink, or export on Windows / with UE Explorer.
+>
+> Exports can also be **incomplete**: for example `Rage.Physical` (the superclass of `Vehicle`) is missing from `Rage/Classes/`. When a class is missing, read its superclass and function list from the compiled package's export table instead of guessing.
+
+Once decompiled, the base game sources are available locally:
 - `Core/Classes/`: Low-level Unreal objects, primitives, and math.
-- `Engine/Classes/`: `Actor`, `Pawn`, `PlayerPawn`, `Inventory`, `Weapon`, network replication.
-- `Rage/Classes/`: `RagePlayer`, vehicle physics (`PHYS_Physical`, `Car`, `Buggy`), zones, loadout crates.
+- `Engine/Classes/`: `Actor`, `Pawn`, `PlayerPawn`, `EnginePhysical`, `Inventory`, `Weapon`, network replication.
+- `Rage/Classes/`: `RagePlayer`, vehicles (`Vehicle`, `Car`, `Buggy`), zones, loadout crates.
 - `RageWeapons/Classes/`: `RageWeapon`, `AdrenalineShot`, `Grenades`, `TripBombs`, weapon animations.
 - `RageGame/Classes/`: `RageDeathMatch`, `RageTeamGame`, captains, beacons.
 
 ---
 
-### C. Active Custom Mods (Tracked in Git)
-The following custom mods are tracked and developed in this repository:
-- `ZombieGame/`: Infection gamemode with custom zombie classes, nemesis mechanics, and melee weapons.
-- `Totem/`: Tactical restoration stim & passive cheat-death item.
-- `SeekerMines/`: Drone mine with autonomous tracking.
-- `TripLasers/`: Directional laser tripwire explosives.
-- `SentryGun/`: Deployable defensive auto-turret.
-- `TugGame/`, `arenaMode/`, `battleRoyale/`: Additional custom gamemodes.
+### C. Custom Mods (Tracked in Git)
+Only these packages are developed in this repository; their `.uc` files are whitelisted in `.gitignore`:
+- **Gamemodes**
+  - `ZombieGame/`: Infection gamemode with custom zombie classes, nemesis mechanics, and melee weapons.
+  - `TugGame/`: Tug of war team gamemode.
+  - `KOH/`: King of the Hill, multi-point domination.
+  - `CoopMode/`: Coop mode built on CTF.
+- **Weapons & items**
+  - `PredatorMissile/`: Player-guided nuclear missile terminal.
+  - `SeekerMines/`: Drone mine with autonomous tracking.
+  - `SentryGun/`: Deployable defensive auto-turret.
+  - `TripLasers/`: Directional laser tripwire explosives.
+  - `Molotov/`: Grenade that leaves a burning fire area.
+  - `Totem/`: Tactical restoration stim & passive cheat-death item.
+
+### D. Third-Party Packages (Decompiled, Not Tracked)
+Other source folders in the game root, such as `arenaMode/`, `battleRoyale/`, `mutPack/`, `TurboCars/`, `MoBall/`, `jeep/`, `boat/`, `deagle/`, `grenLaunch/` and `vote*/`, are **decompiled community packages**, not part of this repository. They're useful as reference.
+- Changes to them are not version-controlled, since `*.uc` is ignored outside the whitelist.
+- Recompiling one (e.g. `arenaMode`, which is in `EditPackages`) produces a new package GUID. Every server and client then needs that exact `.u`; clients with the original package get a version mismatch.
 
 ---
 
@@ -186,13 +197,11 @@ MyMod/
 ### Tracking Your New Mod in Git (`.gitignore` Whitelist)
 Because `*.uc` is ignored globally by default to suppress decompiled engine noise, **git will not track your new mod's UnrealScript files automatically**.
 
-To make your mod visible in `git status` and tracked by version control, add a whitelist exception to the bottom of [.gitignore](.gitignore):
+To make your mod visible in `git status` and tracked by version control, add a whitelist exception to the bottom of [.gitignore](.gitignore). Only `*.uc` is ignored inside package folders, so a mod's `Textures/` and `Models/` are tracked without extra rules:
 
 ```gitignore
 # Whitelist your mod in .gitignore:
 !MyMod/**/*.uc
-!MyMod/Textures/**
-!MyMod/Models/**
 ```
 
 Once added, running `git status` will cleanly show only your mod's files ready to be committed:
@@ -226,8 +235,10 @@ If your weapon needs a custom HUD icon:
 
 For deep architectural details, networking rules, and engine traps, consult the guides in `.agents/`:
 - **[.agents/AGENTS.md](.agents/AGENTS.md)**: Full reference covering:
-  - Network replication realities (`ROLE_SimulatedProxy`, `bReplicateInstigator`, `ServerMove`).
+  - Network replication realities (`ROLE_SimulatedProxy`, `bReplicateInstigator`, `ServerMove`, local-player checks).
+  - Player-guided actors with client-to-server function calls (`PredatorMissile` pattern), and debugging through logs.
   - Single-use consumables lifecycle (`bDestroyWhenEmpty`, the human `Finish()` bug).
   - Loadout zone & crate triggers (`RW.Reload()` trap).
+  - Engine traps: weapon state `Tick`s shadowing yours, freezing players, server-only `Level.Game`/`Level.PawnList`, vehicles living in `Level.VehicleList`.
   - UnrealScript compiler quirks & optimization (state transitions canceling timers, cast caching, short-circuiting).
 - **[.agents/rules/mobile_forces_rules.md](.agents/rules/mobile_forces_rules.md)**: Concise engineering rules for coding assistants.

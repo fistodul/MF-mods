@@ -228,6 +228,7 @@ function RestartRound()
 {
     local Pawn P, NextP;
     local RageBot RB;
+    local EnginePhysical Phys, NextPhys;
     local Vehicle V;
     local TripBomb TB;
     local TripBombOnGround TBG;
@@ -238,17 +239,20 @@ function RestartRound()
     GameReplicationInfo.RemainingTime = RemainingTime;
     GameReplicationInfo.RemainingMinute = RemainingTime;
 
-    // Destroy vehicles and player-placed gadget pawns (SeekerMines, SentryGuns, etc.)
+    // Destroy vehicles. EnginePhysical pawns live in Level.VehicleList, never in Level.PawnList
+    for (Phys = Level.VehicleList; Phys != None; Phys = NextPhys)
+    {
+        NextPhys = Phys.NextPhysical; // cache before SilentDestroy
+        V = Vehicle(Phys);
+        if (V != None)
+            V.SilentDestroy();
+    }
+
+    // Destroy player-placed gadget pawns (SeekerMines, SentryGuns, etc.); players and bots have a PRI
     for (P = Level.PawnList; P != None; P = NextP)
     {
         NextP = P.NextPawn;
-        if (P.PlayerReplicationInfo != None)
-            continue;
-
-        V = Vehicle(P);
-        if (V != None)
-            V.SilentDestroy();
-        else
+        if (P.PlayerReplicationInfo == None)
             P.Destroy();
     }
 
