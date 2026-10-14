@@ -64,8 +64,8 @@ function int ArmorAbsorbDamage(int Damage, name DamageType, vector HitLocation)
     local int AllowedDamage;
     local Pawn P;
 
-    // Ignore zero-damage calls (zone transitions send ReduceDamage(0, 'Breathe')) and mover crushes
-    if (Damage <= 0 || DamageType == 'Crushed')
+    // Let mover crushes through (Inventory.ReduceDamage only calls this with Damage > 0)
+    if (DamageType == 'Crushed')
         return Damage;
 
     P = Pawn(Owner);
@@ -92,7 +92,7 @@ function TriggerRevival(vector HitLocation)
     Buff = Spawn(class'TotemHealEffect', P);
     if (Buff != None)
     {
-        // GiveTo first (settles the actor into inventory + Idle2 state) THEN ActivateBuff (starts the timer safely after state transition)
+        // GiveTo first: its BecomeItem() call runs SetTimer(0), which would cancel ActivateBuff's timer
         Buff.GiveTo(P);
         Buff.ActivateBuff(ReviveHoTHealPerTick, ReviveHoTTicks, HoTInterval, ReviveGracePeriod);
     }
@@ -104,8 +104,22 @@ function TriggerRevival(vector HitLocation)
     if (ClipAmmo <= 0)
     {
         bIsAnArmor = false;
-        Destroy();
+        DestroyConsumed();
     }
+}
+
+// DeleteInventory leaves this item's carry penalty in GroundSpeed, so recalculate before destroying
+function DestroyConsumed()
+{
+    local Pawn P;
+
+    P = Pawn(Owner);
+    if (P != None)
+    {
+        P.DeleteInventory(self);
+        P.SetSpeedFromInventory();
+    }
+    Destroy();
 }
 
 //=============================================================================
@@ -290,7 +304,7 @@ ignores Fire, AltFire;
 Begin:
     Pawn(Owner).ChangedWeapon();
     if (!AmmoInClip())
-        Destroy();
+        DestroyConsumed();
 }
 
 function Finish()
