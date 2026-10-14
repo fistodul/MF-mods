@@ -1,6 +1,6 @@
 # Mobile Forces Mod Repository (MF-mods)
 
-Comprehensive modding repository, custom gamemodes, weapons, mutators, and decompiled engine reference for **Mobile Forces** (Rage Software, 2002 — Unreal Engine 1.5 hybrid).
+Comprehensive modding repository, custom gamemodes, weapons, mutators, and decompiled engine reference for **Mobile Forces** (Rage Software, 2002 — Unreal Engine 1.5 hybrid). [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/fistodul/MF-mods)
 
 ---
 
@@ -9,20 +9,20 @@ Comprehensive modding repository, custom gamemodes, weapons, mutators, and decom
 To build mods, run tests, and allow AI coding agents to reference the engine accurately, **this repository must be cloned directly into your root Mobile Forces game directory**:
 
 ```text
-<SteamLibrary>/steamapps/common/Mobile Forces/   (or MobileForces/)
+<SteamLibrary>/steamapps/common/Mobile Forces/
 │   Tracked in this repo:
 ├── AGENTS.md  <- Always-on AI agent rules (Quick Rules)
 ├── .agents/rules/  <- Detailed engine guide split by topic + caveman response style
-├── CoopMode/ KOH/ TugGame/ ZombieGame/                         <- Custom gamemodes
-├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/   <- Custom weapons & items
+├── CoopMode/ KOH/ TugGame/ ZombieGame/  <- Custom gamemodes
+├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/  <- Custom weapons & items
 ├── README.md, LICENSE, .gitignore
 │
 │   Local only (not tracked):
-├── Core/ Engine/ Rage/ RageWeapons/ RageGame/ ...   <- Decompiled base game classes (section 2B)
-├── arenaMode/ battleRoyale/ mutPack/ ...            <- Decompiled third-party packages (section 2D)
-├── MF-updater/           <- Separate repository (section 2A)
-├── Maps/ Textures/ Sounds/ Music/                   <- Game assets
-└── System/               <- UCC compiler, game binaries, configs (.ini) and compiled packages (.u)
+├── Core/ Engine/ Rage/ RageWeapons/ RageGame/ ...  <- Decompiled base game classes (section 2B)
+├── arenaMode/ battleRoyale/ mutPack/ ...  <- Decompiled third-party packages (section 2D)
+├── MF-updater/  <- Separate repository (section 2A)
+├── Maps/ Textures/ Sounds/ Music/  <- Game assets
+└── System/  <- UCC compiler, game binaries, configs (.ini) and compiled packages (.u)
 ```
 
 ### Why clone into the game root?
@@ -84,7 +84,7 @@ cd ..
 
 *(Alternatively, you can open any `.u` file in the Mobile Forces editor, [UE Explorer](https://eliotvu.com/portfolio/view/21/ue-explorer), or WOTgreal and export classes).*
 
-> **Wine caveats**: `ucc batchexport` has been seen crashing under Wine (stack overflow on `Engine.u`/`Rage.u`), and UCC mis-parses its own path when it contains a space ("Mobile Forces"). Run it through the `MobileForces` symlink, or export on Windows / with UE Explorer.
+> **Wine caveats**: `ucc batchexport` has been seen crashing under Wine (stack overflow on `Engine.u`/`Rage.u`), and UCC mis-parses its own path when it contains a space ("Mobile Forces"). Run it through the `MobileForces` symlink, or export on Windows.
 >
 > Exports can also be **incomplete**: for example `Rage.Physical` (the superclass of `Vehicle`) is missing from `Rage/Classes/`. When a class is missing, read its superclass and function list from the compiled package's export table instead of guessing.
 
