@@ -11,7 +11,8 @@ To build mods, run tests, and allow AI coding agents to reference the engine acc
 ```text
 <SteamLibrary>/steamapps/common/Mobile Forces/   (or MobileForces/)
 │   Tracked in this repo:
-├── AGENTS.md  <- AI agent rules & engine guide
+├── AGENTS.md  <- Always-on AI agent rules (Quick Rules)
+├── .agents/rules/  <- Detailed engine guide split by topic + caveman response style
 ├── CoopMode/ KOH/ TugGame/ ZombieGame/                         <- Custom gamemodes
 ├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/   <- Custom weapons & items
 ├── README.md, LICENSE, .gitignore
@@ -233,10 +234,15 @@ If your weapon needs a custom HUD icon:
 
 ## 6. Architecture & Modding Guide for Agents & Humans
 
-For deep architectural details, networking rules, and engine traps, consult **[AGENTS.md](AGENTS.md)**. It opens with always-on Quick Rules for coding assistants, followed by the full reference covering:
+Agent documentation is split so coding assistants only load what they need:
+- **[AGENTS.md](AGENTS.md)**: short always-on Quick Rules with an index of the guide files. Each rule points to a guide section.
+- **[.agents/rules/](.agents/rules/)**: the full reference, split by topic (`architecture-build`, `networking`, `hud`, `loadout-consumables`, `gotchas`). These use [Antigravity rule](https://antigravity.google/docs/rules/) frontmatter with `trigger: model_decision`, so Antigravity loads one only when the task matches its description. Other agents find them through the index in `AGENTS.md`. Antigravity's rule editor limits a `description` to 250 characters and the content to 12,000; keep `: ` and quotes out of descriptions, since the editor shows them literally.
+- **[.agents/rules/caveman.md](.agents/rules/caveman.md)**: the official always-on rule from the [caveman](https://github.com/JuliusBrussee/caveman) plugin for terse chat replies (`trigger: always_on`; code, commits and docs stay normal).
+
+The guide covers:
   - Network replication realities (`ROLE_SimulatedProxy`, `bReplicateInstigator`, `ServerMove`, local-player checks).
   - Player-guided actors with client-to-server function calls (`PredatorMissile` pattern), and debugging through logs.
   - Single-use consumables lifecycle (`bDestroyWhenEmpty`, the human `Finish()` bug).
   - Loadout zone & crate triggers (`RW.Reload()` trap).
   - Engine traps: weapon state `Tick`s shadowing yours, freezing players, server-only `Level.Game`/`Level.PawnList`, vehicles living in `Level.VehicleList`.
-  - UnrealScript compiler quirks & optimization (state transitions canceling timers, cast caching, short-circuiting).
+  - UnrealScript compiler quirks & optimization (`GiveTo()` canceling timers, cast caching, short-circuiting).
