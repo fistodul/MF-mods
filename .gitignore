@@ -1,6 +1,8 @@
 /.claude
 /Cache
 /Maps
+/MapBuild
+__pycache__/
 /MF-updater
 /Music
 /Physics
@@ -14,6 +16,7 @@
 /Manual.pdf
 /MobileForces*.ico
 *.uc
+!ArmedAPC/**/*.uc
 !CoopMode/**/*.uc
 !Molotov/**/*.uc
 !PredatorMissile/**/*.uc
