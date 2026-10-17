@@ -580,14 +580,19 @@ simulated function PostRender(canvas Canvas)
 
 defaultproperties
 {
-     MaxClipAmmo=1
-     ClipAmmo=1
-     MaxClips=1
-     bDestroyWhenEmpty=True
-     WeaponIcon=(X=0,Y=0,W=128,H=64,t=Texture'PredatorMissile.Icons.PredatorIcon')
+     HudGreen=(R=80,G=255,B=120,A=255)
+     HudRed=(R=255,G=50,B=50,A=255)
+     HudOrange=(R=255,G=165,A=255)
+     HudDarkGreen=(R=30,G=120,B=50,A=200)
      MarkerFovScale=1.000000
      WarmupDuration=10.000000
+     MaxClipAmmo=1
+     MaxClips=1
+     ClipAmmo=1
+     bDestroyWhenEmpty=True
+     WeaponIcon=(W=128,H=64,t=Texture'PredatorMissile.Icons.PredatorIcon')
      AIRating=0.850000
+     SelectSound=Sound'WeaponSFX_HeavyMachineGun.Select'
      DeathMessage="%k called in a Predator Missile on %o."
      MaxCanCarry=1
      CarrySize=2
@@ -600,11 +605,6 @@ defaultproperties
      BobDamping=0.975000
      PickupViewMesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
      ThirdPersonMesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
-     Mesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
-     SelectSound=Sound'WeaponSFX_HeavyMachineGun.Select'
      PickupSound=Sound'WeaponSFX_HeavyMachineGun.Pickup'
-     HudGreen=(R=80,G=255,B=120,A=255)
-     HudRed=(R=255,G=50,B=50,A=255)
-     HudOrange=(R=255,G=165,B=0,A=255)
-     HudDarkGreen=(R=30,G=120,B=50,A=200)
+     Mesh=LodMesh'RageWeapons.TripBombsPickupCarryMesh'
 }

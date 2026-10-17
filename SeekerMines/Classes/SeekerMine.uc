@@ -393,7 +393,6 @@ Begin:
 
 defaultproperties
 {
-     LifeSpan=480.000000
      PlacedTeam=255
      bFlyer=True
      SeekRadius=1900.000000
@@ -403,6 +402,7 @@ defaultproperties
      AirSpeed=620.000000
      AccelRate=2400.000000
      Health=15
+     LifeSpan=480.000000
      DrawType=DT_Mesh
      Mesh=LodMesh'SeekerMines.Drone_Air'
      CollisionRadius=14.000000

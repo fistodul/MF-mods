@@ -502,16 +502,15 @@ defaultproperties
      MomentumTransfer=250000
      MyDamageType=PredatorMissileDOTPredatorMissileWeapon
      ExplosionDecal=Class'RAGEEFFECTS.Scorch'
-     RemoteRole=ROLE_SimulatedProxy
+     bOwnerNoSee=True
+     bAlwaysRelevant=True
      bNetTemporary=False
-     bReplicateInstigator=True
+     RemoteRole=ROLE_SimulatedProxy
+     LifeSpan=20.000000
      Mesh=LodMesh'RageWeapons.RocketMesh'
      DrawScale=2.500000
      AmbientGlow=96
      bCollisionSphere=True
      CollisionRadius=16.000000
      CollisionHeight=16.000000
-     bOwnerNoSee=True
-     bAlwaysRelevant=True
-     LifeSpan=20.000000
 }

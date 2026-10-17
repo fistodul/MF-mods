@@ -607,7 +607,6 @@ simulated event Destroyed()
 
 defaultproperties
 {
-     LifeSpan=480.000000
      MaxSentryAmmo=850
      ScanRange=1900.000000
      ShotDamage=20
@@ -620,6 +619,7 @@ defaultproperties
      Health=80
      bAlwaysRelevant=True
      RemoteRole=ROLE_SimulatedProxy
+     LifeSpan=480.000000
      DrawType=DT_Mesh
      Mesh=LodMesh'RageWeapons.HeavyMachineGunPickupCarryMesh'
      DrawScale=1.250000

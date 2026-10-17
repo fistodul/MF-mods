@@ -251,7 +251,7 @@ function Destroyed()
 
 defaultproperties
 {
-     LifeSpan=480.000000
      LaserMaxDistance=1500.000000
+     LifeSpan=480.000000
      SoundVolume=80
 }
