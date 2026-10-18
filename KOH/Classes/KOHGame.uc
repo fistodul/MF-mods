@@ -699,8 +699,8 @@ function bool FindSpecialAttractionForX(RBot InBot)
 
 defaultproperties
 {
-     PointsToSpawn=3
-     GoalTeamScore=500
+     PointsToSpawn=4
+     GoalTeamScore=700
      bCentralizedSpawning=True
      MinDistance=600.000000
      bScoreTeamKills=False
@@ -708,7 +708,7 @@ defaultproperties
      CurrentOrders(1)=FreeLance
      CurrentOrders(2)=FreeLance
      CurrentOrders(3)=FreeLance
-     FragLimit=500
+     FragLimit=700
      TimeLimit=0
      InstructionSound=Sound'Announcer.Hold_the_Point'
      RulesMenuType="KOH.screenRulesKOH"
