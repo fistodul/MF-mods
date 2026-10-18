@@ -14,6 +14,7 @@ To build mods, run tests, and allow AI coding agents to reference the engine acc
 ├── AGENTS.md  <- Always-on AI agent rules (Quick Rules)
 ├── .agents/rules/  <- Detailed engine guide split by topic + caveman response style
 ├── .agents/tools/maptool/  <- Scripted map building in Python: T3D export/survey, editor macro runner (maps 10)
+├── .agents/tools/upkg.py  <- Reads package tables (.u/.umf/.utx/.uax/.umx): exports, imports, classes vs sources, who uses a package
 ├── CoopMode/ KOH/ TugGame/ ZombieGame/  <- Custom gamemodes
 ├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/  <- Custom weapons & items
 ├── ArmedAPC/  <- Custom vehicles

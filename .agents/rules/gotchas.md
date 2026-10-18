@@ -93,4 +93,4 @@ In UnrealScript bytecode, dynamic casts like `Pawn(Owner)` or `Pawn(Other)` perf
   ```
 - Target finders that should hit vehicles need both loops. See `SeekerMine.FindBestTarget` and `SentryGunTurret.FindBestTarget`.
 - `VehicleList` is maintained only where `Role == ROLE_Authority`, since `Destroyed()` returns early on clients. On clients, use `foreach AllActors(class'Vehicle', V)`.
-- The stock sources are complete (every class in the 15 base packages has a `.uc`). For a package with no source folder, read the export table of the compiled `.u`. Export classes with other tools (README 2B): `ucc batchexport` aborts on `Core`, `Engine`, `Editor`, `IpDrv` and `Rage` (`Assertion failed: Class->ScriptText`).
+- The stock sources are complete (every class in the 15 base packages has a `.uc`). For a package with no source folder, read the export table of the compiled `.u` with `.agents/tools/upkg.py` (`info`, `exports`, `classes`; `refs <Package>` finds the files that import from a package). Export classes with other tools (README 2B): `ucc batchexport` aborts on `Core`, `Engine`, `Editor`, `IpDrv` and `Rage` (`Assertion failed: Class->ScriptText`).
