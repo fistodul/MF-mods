@@ -47,13 +47,21 @@ simulated event PostRender(Canvas Canvas)
 	if ((HitLocation - PP.Location) dot vector(PP.ViewRotation) <= 0)
 		return;
 
-	ScreenPos = Project(Canvas, HitLocation);
+	// On clients this weapon is a simulated proxy, which skips non-simulated natives like Project
+	ScreenPos = HUD.Project(Canvas, HitLocation);
 	Scale = Canvas.ClipX / 640;
 
+	// Drawn like RageHUD.DrawCrossHair
+	Canvas.Style = ERenderStyle.STY_Subtractive;
+	Canvas.DrawColor = HUD.GreyColor;
+	DrawCrossHair(Canvas, HUD, ScreenPos, Scale);
 	Canvas.Style = ERenderStyle.STY_Translucent;
-	Canvas.DrawColor = HUD.WhiteColor;
-	Canvas.SetPos(ScreenPos.X - 16 * Scale, ScreenPos.Y - 16 * Scale);
-	Canvas.DrawTile(HUD.CrosshairGraphic[HUD.Crosshair], 32 * Scale, 32 * Scale, 1, 1, 30, 30);
+	if (HUD.TeamIndex() == 1)
+		Canvas.DrawColor = HUD.RedColor;
+	else
+		Canvas.DrawColor = HUD.BlueColor;
+	DrawCrossHair(Canvas, HUD, ScreenPos, Scale);
+	DrawCrossHair(Canvas, HUD, ScreenPos, Scale);
 
 	Canvas.Style = ERenderStyle.STY_Normal;
 	Canvas.Font = HUD.MyFonts.GetHUDMedFont(HUD.HUDSize);
@@ -62,6 +70,12 @@ simulated event PostRender(Canvas Canvas)
 		Canvas.DrawText(APC.ClipAmmo);
 	else
 		Canvas.DrawText("RELOADING");
+}
+
+simulated function DrawCrossHair(Canvas Canvas, RageHUD HUD, vector ScreenPos, float Scale)
+{
+	Canvas.SetPos(ScreenPos.X - 16 * Scale, ScreenPos.Y - 16 * Scale);
+	Canvas.DrawTile(HUD.CrosshairGraphic[HUD.Crosshair], 32 * Scale, 32 * Scale, 1, 1, 30, 30);
 }
 
 defaultproperties

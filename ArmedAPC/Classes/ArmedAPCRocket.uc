@@ -9,7 +9,6 @@ defaultproperties
      TurretMesh=LodMesh'RageWeapons.RocketLauncherPickupCarryMesh'
      FireInterval=0.800000
      MaxClipAmmo=4
-     ReloadTime=5.000000
      Spread=0.010000
      ProjectileClass=Class'RageWeapons.Rocket'
      FireSound=Sound'WeaponSFX_RocketLauncher.Fire'

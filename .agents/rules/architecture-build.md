@@ -68,10 +68,11 @@ UCC only compiles a package if `System/<PackageName>.u` does not already exist.
   ```bash
   rm -f System/<PackageName>.u && wine System/UCC.exe make -nobind
   ```
-- **Windows / PowerShell**:
+- **Windows / PowerShell**: UCC parses its whole command line, including its own path, and splits it at the space in "Mobile Forces" (`Failed to find object 'Class Any.Forces\System\UCC.exe"'`). Run it from the 8.3 short path:
   ```powershell
   Remove-Item .\System\<PackageName>.u -ErrorAction SilentlyContinue
-  .\System\UCC.exe make -nobind
+  $sys = (New-Object -ComObject Scripting.FileSystemObject).GetFolder("$PWD\System").ShortPath
+  Start-Process "$sys\UCC.exe" -ArgumentList 'make -nobind' -WorkingDirectory $sys -Wait -NoNewWindow
   ```
 - Use `-nobind` to prevent native DLL binding issues during automated compilation.
 - Ensure 0 errors and 0 warnings before testing in-game.
@@ -83,6 +84,27 @@ UCC only compiles a package if `System/<PackageName>.u` does not already exist.
 Mature mods in this repository adhere to these principles:
 
 1. **Minimal & Deduplicated**:
+   - Override only what differs and let `Super` do the rest. `ZombieGame` and `TripLasers` guard, wrap or post-process the parent call instead of copying its body:
+     ```unrealscript
+     function AddDefaultInventory(Pawn P)
+     {
+         if (IsOnTeam(P, 1))
+             GiveMelee(P);
+         else
+             Super.AddDefaultInventory(P);
+     }
+
+     function bool RestartPlayer(Pawn P)
+     {
+         if (Super.RestartPlayer(P))
+         {
+             // mod-specific setup only
+             return true;
+         }
+         return false;
+     }
+     ```
+     Copy a parent body only when the part to change sits mid-function with no hook. Keep the copy to that one function and say why in a comment (e.g. `battleRoyale`'s marked edits of `RageDeathmatch.GiveWeapon`).
    - Avoid creating duplicate variables (e.g. `BaseSpeed` vs `Speed`, or duplicate state booleans).
    - Reuse engine variables (`Speed`, `MaxSpeed`, `Damage`, `MomentumTransfer`, `LifeSpan`) before inventing custom ones. For a max lifetime, set `LifeSpan` in `defaultproperties` instead of tracking `SpawnTime`; the engine destroys the actor on time, so put cleanup (beams, tripods) in `Destroyed()` (see `TripLaser`, `SeekerMine`, `SentryGunTurret`).
    - Remove unused locals and variables; UCC doesn't warn about them.

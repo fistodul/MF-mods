@@ -13,8 +13,10 @@ To build mods, run tests, and allow AI coding agents to reference the engine acc
 │   Tracked in this repo:
 ├── AGENTS.md  <- Always-on AI agent rules (Quick Rules)
 ├── .agents/rules/  <- Detailed engine guide split by topic + caveman response style
+├── .agents/tools/maptool/  <- Scripted map building in Python: T3D export/survey, editor macro runner (maps 10)
 ├── CoopMode/ KOH/ TugGame/ ZombieGame/  <- Custom gamemodes
 ├── Molotov/ PredatorMissile/ SeekerMines/ SentryGun/ Totem/ TripLasers/  <- Custom weapons & items
+├── ArmedAPC/  <- Custom vehicles
 ├── README.md, LICENSE, .gitignore
 │
 │   Local only (not tracked):
@@ -59,34 +61,13 @@ Decompiling the base game generates hundreds of `.uc` files across the core engi
 
 To give yourself and your AI coding agents (Antigravity, Cursor, Claude) full visibility into the engine hierarchy, native formulas, vehicle physics, and replication logic, **you should decompile the base game `.u` packages once after installation**:
 
-#### Using `UCC.exe batchexport`:
-Run the following from your game root to export all base classes into their respective `<Package>/Classes/` directories:
+Open each of these packages from `System/` in the Mobile Forces editor, [UE Explorer](https://eliotvu.com/portfolio/view/21/ue-explorer) or WOTgreal, and export it into `<Package>/Classes/`:
 
-**Windows (cmd.exe / PowerShell)**:
-```cmd
-cd System
-for %p in (Core Engine Editor UWindow Fire IpDrv IpServer UBrowser RageGfx RageEffects RageWeapons Rage RageGame RageMenu RageBrowser) do (
-    mkdir ..\%p\Classes 2>nul
-    UCC.exe batchexport %p.u class uc ..\%p\Classes
-)
-cd ..
-```
+`Core` `Engine` `Editor` `UWindow` `Fire` `IpDrv` `IpServer` `UBrowser` `RageGfx` `RageEffects` `RageWeapons` `Rage` `RageGame` `RageMenu` `RageBrowser`
 
-**Linux / Wine (Bash)**:
-```bash
-cd System
-for pkg in Core Engine Editor UWindow Fire IpDrv IpServer UBrowser RageGfx RageEffects RageWeapons Rage RageGame RageMenu RageBrowser; do
-    mkdir -p "../$pkg/Classes"
-    wine UCC.exe batchexport "$pkg.u" class uc "../$pkg/Classes"
-done
-cd ..
-```
+Every class in these packages has its script, so a full export gives one `.uc` per class (`Rage` has 169, `Engine` 104).
 
-*(Alternatively, you can open any `.u` file in the Mobile Forces editor, [UE Explorer](https://eliotvu.com/portfolio/view/21/ue-explorer), or WOTgreal and export classes).*
-
-> **Wine caveats**: `ucc batchexport` has been seen crashing under Wine (stack overflow on `Engine.u`/`Rage.u`), and UCC mis-parses its own path when it contains a space ("Mobile Forces"). Run it through the `MobileForces` symlink, or export on Windows.
->
-> Exports can also be **incomplete**: for example `Rage.Physical` (the superclass of `Vehicle`) is missing from `Rage/Classes/`. When a class is missing, read its superclass and function list from the compiled package's export table instead of guessing.
+> Don't use `UCC.exe batchexport` for this. It stops on `Core`, `Engine`, `Editor`, `IpDrv` and `Rage` with `Assertion failed: Class->ScriptText` before writing any file, so those five, the most useful ones, come out empty.
 
 Once decompiled, the base game sources are available locally:
 - `Core/Classes/`: Low-level Unreal objects, primitives, and math.
@@ -111,6 +92,8 @@ Only these packages are developed in this repository; their `.uc` files are whit
   - `TripLasers/`: Directional laser tripwire explosives.
   - `Molotov/`: Grenade that leaves a burning fire area.
   - `Totem/`: Tactical restoration stim & passive cheat-death item.
+- **Vehicles**
+  - `ArmedAPC/`: APC whose roof gunner aims a heavy machine gun (`ArmedAPC`) or rocket launcher (`ArmedAPCRocket`) turret with the camera.
 
 ### D. Third-Party Packages (Decompiled, Not Tracked)
 Other source folders in the game root, such as `arenaMode/`, `battleRoyale/`, `mutPack/`, `TurboCars/`, `MoBall/`, `jeep/`, `boat/`, `deagle/`, `grenLaunch/` and `vote*/`, are **decompiled community packages**, not part of this repository. They're useful as reference.

@@ -12,6 +12,8 @@
 | [`hud.md`](.agents/rules/hud.md) | 4 HUD, crosshair & weapon icons |
 | [`loadout-consumables.md`](.agents/rules/loadout-consumables.md) | 5 Loadouts & armor, 6 Consumables lifecycle |
 | [`gotchas.md`](.agents/rules/gotchas.md) | 7 UnrealScript & engine gotchas |
+| [`maps.md`](.agents/rules/maps.md) | 10 Maps & the editor (tool: `.agents/tools/maptool/`) |
+| [`vehicles.md`](.agents/rules/vehicles.md) | 11 Vehicles, seats & mounted weapons |
 
 ---
 
@@ -25,7 +27,7 @@
 - **Single-Authority Damage & Explosions**: In `simulated function Explode()`, guard explosion spawns, sound, and `HurtRadius` behind `if (Role == ROLE_Authority)` to prevent duplicate explosion effects and server/client desync. Guided/camera actors must not `Destroy()` on a client-side hit; stop and wait for the server. (networking 2D)
 - **Weapon Crosshair**: `RageHUD` checks `RagePlayerOwner.Weapon.bOwnsCrossHair`. Set it every frame in `PostRender` whenever a custom overlay or guidance state is active. (hud 4A)
 - **Weapon `Tick` Is Unreliable on Clients**: RageWeapon's client states (`ClientFiring`, `ClientDown`, zoom states, ...) define their own `Tick`, which shadows a subclass's global `Tick`. Keep client per-frame logic in a stateless actor or `PostRender`. (gotchas 7F)
-- **Debug via Logs**: Use tagged `log(..., 'MyPackage')` and read `System/MobileForces.log` (client) and the server's log. Potentially use ClientMessage. (networking 2F)
+- **Debug via Logs**: `log("...", 'MyPackage')` writes to `System/MobileForces.log` on the client, alongside the engine's `ScriptWarning: ... Accessed None` lines. For in-game output, `Pawn.ClientMessage("...")`. (networking 2F)
 
 ### Loadout & Crate Rules
 - **The `TryLoadout` Reload Trap**: When a player opens loadout at a crate or in a `LoadoutZone` (the `TryLoadout` key, or spawning into a loadout room), `ServerTryLoadout` calls `RW.Reload()` on **every** weapon in the inventory, holstered ones included. A weapon whose `Reload()` triggers an ability must check `if (Pawn(Owner) == None || Pawn(Owner).Weapon != self) return;`. (loadout-consumables 5A)
@@ -42,9 +44,11 @@
 - **The Human `Finish()` Idle Bug**: In `RageWeapon.Finish()`, human players with empty weapons are sent to `state Idle` instead of auto-switching. Single-use items (`bDestroyWhenEmpty=True`) must explicitly call `GotoState('DownWeapon')` immediately after consuming their last ammo. (loadout-consumables 6B)
 - **Passive vs. Active Destruction**: Active weapons transition to `DownWeapon` on empty. Passive items (e.g. cheat-death armor triggered while holstered) must **never** call `DownWeapon`; call direct `Destroy()` to prevent disrupting the player's active firearm. (loadout-consumables 6C)
 
+### Code Style (architecture-build 9)
+- **Override, Don't Copy**: Override only what differs and call `Super.Func(...)` for the rest. Avoid pasting a parent function's body into a subclass.
+
 ### Timers, States & Compiler Quirks
 - **`GiveTo()` Clears Timers**: `Inventory.GiveTo()` calls `BecomeItem()`, which runs `SetTimer(0.0, False)`. When spawning buff/effect items, call `Buff.GiveTo(Target)` **first**, and only start timers (`Buff.ActivateBuff()`) **afterwards**. (gotchas 7A)
-- **No Redundant Casts**: Casting a variable to its own type (e.g. `Pawn(P)` when `P` is already a `Pawn`) causes a fatal compiler error: `Cast from 'Pawn' to 'Pawn' is unnecessary`. (gotchas 7B)
 - **No Redundant Guards**: Look up the source before adding a check. Skip it if a callee, the parent class or the engine already handles the case. Check `bDeleteMe` only on references held across ticks (architecture-build 9.2).
 - **`IsA` Names Aren't Compiled**: `IsA('X')` compiles even when class `X` doesn't exist. Confirm `X` is in `*/Classes` first: MF has no `Bot` class, and its bots are `EngineBot` > `RBot` > `RageBot`. (architecture-build 9.2)
 - **Cache Repeated Casts**: Dynamic casts like `Pawn(Owner)` and `Pawn(Other)` incur runtime bytecode overhead. If used $\ge 2$ times in a function, store in a local variable (`PawnOwner = Pawn(Owner);`). (gotchas 7C)
@@ -54,7 +58,18 @@
 - **Texture Format**: Must be Windows 3.x 8-bit paletted BMP (64×64 pixels, 5,174 bytes) imported with `Flags=2` (`PF_Masked`). Palette index `0` must be pure black `RGB(0, 0, 0)` for transparency. (hud 4C)
 - **The 20px Bottom Clearance Rule**: In `RageHUD`, the ammo quantity badge covers the bottom ~20 pixels of the inventory slot. The visual icon must be drawn in `y = 4..43` (centered at `y ~ 24`), leaving **20-21 pixels of transparent space at the bottom**. (hud 4C)
 
+### Vehicles (vehicles 11)
+- **Vehicles Run Script on Clients**: Their client role is `ROLE_Physical` (above `ROLE_AutonomousProxy`), and `PawnLeaveVehicle` is called on clients too. Guard server-only work with `Role == ROLE_Authority`. (vehicles 11A)
+- **Seat Input**: On the server, an occupant's `ViewRotation` is its world aim and `bFire` its fire key, bots included. The seat camera is the overridable `GetSeatPos`. (vehicles 11B-C)
+- **Passengers Keep Their Weapons**: Only drivers get a placeholder `VehicleWeapon` and a switch block. A non-`RageWeapon` held in first person needs `bOwnsCrossHair=True`. (vehicles 11D)
+- **Bullets Don't Hurt Vehicles**: Non-explosive damage types deal 0 to vehicles; `<Package>DOT<Class>` types count as explosive. (vehicles 11E)
+
+### Maps (maps 10)
+- **Script Maps Through the Editor**: Export/import T3D and run editor macros with `.agents/tools/maptool/`. Mind the import traps: package `MyLevel`, first brush becomes the builder brush, bare texture names only. (maps 10A-D)
+- **Fog End Is the Draw Distance**: Nothing renders past a zone's `DistanceFogEnd`, even with fog off. (maps 10E)
+- **No Open-Air Zone Volumes**: They smear (hall of mirrors) and block traces. (maps 10E)
+
 ### Compilation & Workflow
 - **Rebuilding Packages** (architecture-build 8C): Always delete the old `.u` file before compiling:
-  `rm -f System/<PackageName>.u && wine System/UCC.exe make -nobind` (or PowerShell: `Remove-Item .\System\<PackageName>.u; .\System\UCC.exe make -nobind`).
+  `rm -f System/<PackageName>.u && wine System/UCC.exe make -nobind`. On Windows, run UCC from the 8.3 short path of `System`.
 - **EditPackages Order**: In `System/MobileForces.ini`, packages compile from top to bottom. Add custom packages to the end of the `EditPackages` list under `[Editor.EditorEngine]`. (architecture-build 8A)
