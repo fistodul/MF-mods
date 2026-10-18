@@ -222,9 +222,62 @@ simulated function DrawMiniMapObjects(canvas Canvas, float PlayerPosX, float Pla
             );
 
             DrawTexRect(Canvas, TimerIcon_Team[TimerTeam], MinimapIconSize * RenderScale, MinimapIconSize * RenderScale);
-            GameObjectItem = TimerItem;
         }
     }
+}
+
+// RageHUD frames the player and one GameObjectItem. KOH has several points, and a captured one is
+// re-tracked at the end of the minimap list, so framing the last one zoomed onto it and hid the
+// rest. Frame the player and every point instead (RageHUD's two-object framing, over all of them).
+simulated function SetMapExtents(float PlayerPosX, float PlayerPosY)
+{
+    local MinimapInfo MiniMap;
+    local MinimapObjectReplicationInfo TimerItem;
+    local float MinX, MinY, MaxX, MaxY, PosX, PosY, intX, intY, intW, intH, centX, centY;
+    local int i, Team;
+
+    MiniMap = RagePlayer(PlayerOwner).MiniMap;
+    MinX = PlayerPosX;
+    MaxX = PlayerPosX;
+    MinY = PlayerPosY;
+    MaxY = PlayerPosY;
+
+    Team = TeamIndex();
+    for (i = 0; i < MiniMap.GetNumItems(Team); ++i)
+    {
+        TimerItem = MiniMap.GetItem(i, Team);
+        if (TimerItem == None ||
+            (TimerItem.Type != 'TimerNeutral' && TimerItem.Type != 'TimerRed' && TimerItem.Type != 'TimerBlue'))
+            continue;
+
+        PosX = (TimerItem.X - MiniMap.MapLeft) * MiniMap.PixelsToMapUnits;
+        PosY = (TimerItem.Y - MiniMap.MapTop) * MiniMap.PixelsToMapUnits;
+        MinX = FMin(MinX, PosX);
+        MaxX = FMax(MaxX, PosX);
+        MinY = FMin(MinY, PosY);
+        MaxY = FMax(MaxY, PosY);
+    }
+
+    intX = FMax(0, MinX - MiniMapMargin);
+    intY = FMax(0, MinY - MiniMapMargin);
+    intW = FMin(MiniMap.TexWidth, MaxX - intX + MiniMapMargin);
+    intH = FMin(MiniMap.TexHeight, MaxY - intY + MiniMapMargin);
+
+    mapW = FMax(intW, intH);
+    mapH = mapW;
+    MapScale = MiniMapSize * RenderScale / float(mapW);
+
+    centX = intX + intW * 0.5;
+    centY = intY + intH * 0.5;
+
+    if (MapScale > MapMaxScale * RenderScale)
+    {
+        MapScale = MapMaxScale * RenderScale;
+        mapW = MiniMapSize * RenderScale / MapScale;
+        mapH = mapW;
+    }
+    mapX = centX - mapW * 0.5;
+    mapY = centY - mapH * 0.5;
 }
 
 defaultproperties
