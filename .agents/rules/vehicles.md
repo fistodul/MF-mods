@@ -38,6 +38,7 @@ description: Vehicle seats, passenger input and cameras, vehicle net roles, bloc
 - `Mutator.MutatorTakeDamage` zeroes damage to any `Physical` unless `IsExplosiveDamageType`. So `'tracedshot'` and other bullet types don't hurt vehicles by default; `mutPack.changeDamage` changes that.
 - `RageGameInfo.IsExplosiveDamageType` treats any `<Package>DOT<Class>` damage type as explosive: vehicles take ×1.5 (`Vehicle.TakeDamage`) and seat protection applies to occupants. The death message comes from that `Inventory` class's `DeathMessage`. Other damage types use `Killer.Weapon`'s.
 - A projectile spawned by a pawn (`Gunner.Spawn(...)`) gets that pawn as `Instigator` (`Pawn.PreBeginPlay` sets `Instigator = Self`). `Rocket.ProcessTouch` then ignores the instigator and `Instigator.VehicleIn`.
+- A vehicle's actor collision cylinder is set natively from its whole extent (a `Truck` measured radius 445, `Vehicle`'s default says 64). Traces ignore it, but `Spawn` of a blocking actor anywhere inside it fails. `SentryGun` spawns its turret with no collision (its defaults), checks for real blockers itself (players, wheels), then calls `SetCollision(true, true, true)`.
 - Traces from a vehicle skip the vehicle itself, but its wheel/petrol-cap collision actors (`Owner == self`) and its occupants block them. Re-trace from the hit actor (`Other.Trace`, which skips `Other`), as `ArmedAPC.TraceFire` does.
 
 ### F. Mounted Turret Pattern (`ArmedAPC`)

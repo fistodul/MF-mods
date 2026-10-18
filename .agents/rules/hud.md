@@ -65,3 +65,7 @@ Mobile Forces draws inventory weapon icons using `RageHUD.DrawTexRect(Canvas, We
        WeaponIcon=(X=0,Y=0,W=64,H=64,t=Texture'MyPackage.Icons.MyWeaponIcon')
    }
    ```
+
+### D. Minimap Framing
+- `RageHUD.SetMapExtents` zooms the minimap to frame the player and one `GameObjectItem` (a `MinimapObjectReplicationInfo`, set by a game's HUD in `DrawMiniMapObjects`), or the player alone when it is `None`.
+- With several objectives, override `SetMapExtents` to frame all of them, as `KOHHUD` does. Setting `GameObjectItem` to the last item drawn frames whichever one is last in the list, and `MinimapInfo.TrackItem` appends, so a re-tracked objective (e.g. a captured KOH point) took over the view.
