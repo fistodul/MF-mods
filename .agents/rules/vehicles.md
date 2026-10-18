@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: Vehicle seats, passenger input and cameras, net roles of vehicles, blocking weapons in a seat, damage types against vehicles, and mounting a turret (ArmedAPC). Read before writing or reviewing vehicle code.
+description: Vehicle seats, passenger input and cameras, vehicle net roles, blocking weapons in a seat, damage types against vehicles, mounted turrets (ArmedAPC), generators that fail to spawn (64-physical limit), boarding from water. Read before vehicle code.
 ---
 
 # Vehicles
@@ -42,3 +42,9 @@ description: Vehicle seats, passenger input and cameras, net roles of vehicles, 
 
 ### F. Mounted Turret Pattern (`ArmedAPC`)
 - Each machine spawns its own turret mesh (`RemoteRole=ROLE_None`) and places it in the vehicle's simulated `Tick`. The server and the gunner's own machine aim it from the gunner's `ViewRotation`; the server replicates its rotation for other clients. Firing, ammo and reload run on the server.
+
+### G. Generators & Respawning
+- `VehicleGenerator.CreateVehicle` spawns the vehicle 100 above itself and destroys it again when the native `IsPhysicalCollision()` fails (log: `Destroying car on creation`, then an `Accessed None` in `Vehicle.Destroyed`). It retries every 5 s, for good.
+- A level holds at most **64 physical objects**, props (`Ball`s) and vehicles alike. Map props past 64 vanish at load, and every later vehicle spawn fails as above, wherever it is. Verified with 4 boat generators: 60 balls let all 4 spawn, 61 left one generator retrying. Budget for every mode: the Trailer cab and trailer and Mental Race's two cars take 2, MoBall's ball 1.
+- Boarding from water: `ServerTryEnterExit` returns unless the player is walking or falling (or in state `PlayerWalking`), then takes the nearest door within 512. Yet players have got into a submerged tank, depending on where its seat is; why isn't known. Boats were hard to board from the water, so moor them beside a jetty or a shore.
+- An empty vehicle more than 200 from its generator counts down and `SilentDestroy`s itself; `Destroyed` tells the generator, which spawns a new one 5 s later. So a broken spawn shows up as "the vehicle never came back".

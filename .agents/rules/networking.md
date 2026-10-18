@@ -94,6 +94,8 @@ Server-steered missiles feel laggy, and correcting the client toward the server'
 - Use `log()` with a tag, or ClientMessage text: `log("Sync loc=" $ Location $ " role=" $ Role, 'PredatorMissile');`
 - Client output goes to `System/MobileForces.log`; a dedicated server writes its own log (e.g. `System/server.log`, depending on how it was started). Compare both sides to see what each machine believes.
 - Log sparingly (on events or throttled with a timer), never every `Tick`. Remove the logs once the behaviour is verified.
+- Standalone tests don't replicate anything. To test replication locally, run `UCC.exe server ...` and connect `MobileForces.exe 127.0.0.1`. Both logs are written in 4 KB blocks and a killed client loses its tail, so let a client-side probe (a `bAlwaysRelevant` `Info` with a simulated `Tick`, its package added to `ServerPackages`) log what arrived and then run `ConsoleCommand("exit")`.
+- Hidden actors only reach clients when relevant by other means: `bAlwaysRelevant`, ownership, or an ambient sound. Items in loadout crates and zones are hidden. They replicate because state `Pickup` sets `bAlwaysRelevant` on items spawned during level startup (`Level.bStartup`), so items a mod spawns later need `bAlwaysRelevant = true` set by hand. Otherwise the crate's `aWeapons` stay `None` on clients, and `TryLoadoutCrate` keeps waiting ("replication delay"): the loadout screen never opens. Every item class must also be in `ServerPackages`.
 
 ---
 

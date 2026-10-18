@@ -12,7 +12,8 @@
 | [`hud.md`](.agents/rules/hud.md) | 4 HUD, crosshair & weapon icons |
 | [`loadout-consumables.md`](.agents/rules/loadout-consumables.md) | 5 Loadouts & armor, 6 Consumables lifecycle |
 | [`gotchas.md`](.agents/rules/gotchas.md) | 7 UnrealScript & engine gotchas |
-| [`maps.md`](.agents/rules/maps.md) | 10 Maps & the editor (tool: `.agents/tools/maptool/`) |
+| [`maps.md`](.agents/rules/maps.md) | 10A-D Maps & the editor (tool: `.agents/tools/maptool/`) |
+| [`map-content.md`](.agents/rules/map-content.md) | 10E-H Zones, water, game-mode actors, testing |
 | [`vehicles.md`](.agents/rules/vehicles.md) | 11 Vehicles, seats & mounted weapons |
 
 ---
@@ -27,6 +28,7 @@
 - **Single-Authority Damage & Explosions**: In `simulated function Explode()`, guard explosion spawns, sound, and `HurtRadius` behind `if (Role == ROLE_Authority)` to prevent duplicate explosion effects and server/client desync. Guided/camera actors must not `Destroy()` on a client-side hit; stop and wait for the server. (networking 2D)
 - **Weapon Crosshair**: `RageHUD` checks `RagePlayerOwner.Weapon.bOwnsCrossHair`. Set it every frame in `PostRender` whenever a custom overlay or guidance state is active. (hud 4A)
 - **Weapon `Tick` Is Unreliable on Clients**: RageWeapon's client states (`ClientFiring`, `ClientDown`, zoom states, ...) define their own `Tick`, which shadows a subclass's global `Tick`. Keep client per-frame logic in a stateless actor or `PostRender`. (gotchas 7F)
+- **Late-Spawned Hidden Actors Don't Replicate**: Loadout crate items spawned after level startup need `bAlwaysRelevant = true`, or clients never get them and the loadout screen hangs. Test replication on a local server with a connected client, not standalone. (networking 2F)
 - **Debug via Logs**: `log("...", 'MyPackage')` writes to `System/MobileForces.log` on the client, alongside the engine's `ScriptWarning: ... Accessed None` lines. For in-game output, `Pawn.ClientMessage("...")`. (networking 2F)
 
 ### Loadout & Crate Rules
@@ -63,11 +65,15 @@
 - **Seat Input**: On the server, an occupant's `ViewRotation` is its world aim and `bFire` its fire key, bots included. The seat camera is the overridable `GetSeatPos`. (vehicles 11B-C)
 - **Passengers Keep Their Weapons**: Only drivers get a placeholder `VehicleWeapon` and a switch block. A non-`RageWeapon` held in first person needs `bOwnsCrossHair=True`. (vehicles 11D)
 - **Bullets Don't Hurt Vehicles**: Non-explosive damage types deal 0 to vehicles; `<Package>DOT<Class>` types count as explosive. (vehicles 11E)
+- **64 Physical Objects per Level**: Props (`Ball`s) and vehicles share the limit. Past it, map props vanish and generators log `Destroying car on creation` forever. (vehicles 11G)
+- **Boarding From Water Is Unreliable**: `ServerTryEnterExit` only takes walking or falling players, yet a submerged tank can be entered depending on where its seat is. Moor boats at a jetty. (vehicles 11G)
 
-### Maps (maps 10)
+### Maps (maps 10A-D, map-content 10E-H)
 - **Script Maps Through the Editor**: Export/import T3D and run editor macros with `.agents/tools/maptool/`. Mind the import traps: package `MyLevel`, first brush becomes the builder brush, bare texture names only. (maps 10A-D)
-- **Fog End Is the Draw Distance**: Nothing renders past a zone's `DistanceFogEnd`, even with fog off. (maps 10E)
-- **No Open-Air Zone Volumes**: They smear (hall of mirrors) and block traces. (maps 10E)
+- **Fog End Is the Draw Distance**: Nothing renders past a zone's `DistanceFogEnd`, even with fog off. (map-content 10E)
+- **No Open-Air Zone Volumes**: They smear (hall of mirrors) and block traces. (map-content 10E)
+- **Neutral Spawns Are `TeamNumber=255`**: Non-team games only use `PlayerStart`s with `TeamNumber >= 2`; the default 0 is a blue spawn. (map-content 10G)
+- **Test Maps on a Local Server**: `UCC.exe server <map>?game=... -forcelogflush`, read stdout, and use a throwaway probe mutator for what the log doesn't show. (map-content 10H)
 
 ### Compilation & Workflow
 - **Rebuilding Packages** (architecture-build 8C): Always delete the old `.u` file before compiling:
