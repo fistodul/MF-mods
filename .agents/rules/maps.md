@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: Building or changing maps from scripts: the maptool pipeline, T3D export/import rules, MobileForcesEd macros and editor command quirks. Read before touching any .umf; zones, game-mode actors and testing are in map-content.md.
+description: "Building or changing maps from scripts: the maptool pipeline, T3D export/import rules, MobileForcesEd macros and editor command quirks. Read before touching any .umf; zones, game-mode actors and testing are in map-content.md."
 ---
 
 # Maps & the editor

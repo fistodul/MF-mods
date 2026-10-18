@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: What goes in a map: zones, fog, sky and ceiling, water and boats, ladders, physics props, what Battle Royale and the other game modes need, and testing a map on a local server. Read before placing zones or actors in a .umf.
+description: "What goes in a map: zones, fog, sky and ceiling, water and boats, ladders, physics props, what Battle Royale and the other game modes need, and testing a map on a local server. Read before placing zones or actors in a .umf."
 ---
 
 # Map content
