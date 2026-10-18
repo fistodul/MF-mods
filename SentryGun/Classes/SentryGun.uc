@@ -103,6 +103,44 @@ function int CountActiveSentries()
     return Count;
 }
 
+// Whether a player, bot, turret or vehicle part (wheel, petrol cap) is in the turret's cylinder at
+// Loc. Vehicles themselves are skipped: their collision cylinder is set from their whole extent
+// (a truck's radius is 445), so it covers open ground around them.
+function bool TurretObstructed(vector Loc)
+{
+    local actor A;
+    local vector Diff;
+
+    foreach RadiusActors(class'Actor', A, 150, Loc)
+    {
+        if (!A.bCollideActors || !A.bBlockPlayers || A.bWorldGeometry || EnginePhysical(A) != None)
+            continue;
+        Diff = A.Location - Loc;
+        if (Abs(Diff.Z) < A.CollisionHeight + class'SentryGunTurret'.default.CollisionHeight)
+        {
+            Diff.Z = 0;
+            if (VSize(Diff) < A.CollisionRadius + class'SentryGunTurret'.default.CollisionRadius)
+                return true;
+        }
+    }
+    return false;
+}
+
+// The turret has no collision by default, so Spawn only refuses world geometry, and
+// TurretObstructed decides about actors. Its collision is switched on once it stands.
+function SentryGunTurret SpawnTurret(vector PlaceLoc, rotator PlaceRot)
+{
+    local SentryGunTurret Turret;
+
+    PlaceLoc.Z += 22;
+    if (TurretObstructed(PlaceLoc))
+        return None;
+    Turret = Spawn(class'SentryGunTurret',,, PlaceLoc, PlaceRot);
+    if (Turret != None)
+        Turret.SetCollision(true, true, true);
+    return Turret;
+}
+
 function bool TryPlaceSentry()
 {
     local vector PlaceLoc;
@@ -124,7 +162,7 @@ function bool TryPlaceSentry()
         return false;
     }
 
-    Turret = Spawn(class'SentryGunTurret',,, PlaceLoc + vect(0,0,22), PlaceRot);
+    Turret = SpawnTurret(PlaceLoc, PlaceRot);
     if (Turret == None)
     {
         Pawn(Owner).ClientMessage("Cannot deploy Sentry Gun (space obstructed)");

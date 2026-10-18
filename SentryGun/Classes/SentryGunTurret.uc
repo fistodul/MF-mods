@@ -624,10 +624,7 @@ defaultproperties
      Mesh=LodMesh'RageWeapons.HeavyMachineGunPickupCarryMesh'
      DrawScale=1.250000
      CollisionRadius=20.000000
-     bCollideActors=True
      bCollideWorld=True
-     bBlockActors=True
-     bBlockPlayers=True
      LightType=LT_Pulse
      LightBrightness=255
      LightHue=40
